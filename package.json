@@ -1,0 +1,34 @@
+{
+  "name": "sentinel-rescue-x",
+  "version": "1.1.0",
+  "description": "SENTINEL RESCUE-X — simulación de rescate de astronautas con base de datos SQLite e IA de alerta (prototipo educativo).",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --check script.js && node --check i18n.js && node --check sw.js && node --check server.js && node --check threejs/scene.js && node --check scripts/gen-icon.js && node --check scripts/build-mobile.js",
+    "mobile:build": "node scripts/build-mobile.js",
+    "mobile:sync": "npm run mobile:build && cap sync android",
+    "mobile:open": "npm run mobile:sync && cap open android",
+    "mobile:apk": "npm run mobile:sync && cd android && gradlew.bat assembleDebug"
+  },
+  "keywords": [
+    "nasa-space-apps",
+    "simulacion",
+    "sqlite",
+    "openai"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/android": "^7.6.10",
+    "@capacitor/core": "^7.6.10",
+    "better-sqlite3": "^11.10.0",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.6.10"
+  }
+}

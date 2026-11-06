@@ -1,0 +1,12 @@
+{
+  "appId": "com.nasa.proyecto",
+  "appName": "Proyecto NASA",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#040a14"
+  },
+  "backgroundColor": "#040a14"
+}

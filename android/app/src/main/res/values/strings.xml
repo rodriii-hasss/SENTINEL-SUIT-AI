@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SENTINEL RESCUE-X</string>
+    <string name="title_activity_main">SENTINEL RESCUE-X</string>
+    <string name="package_name">com.sentinel.rescuex</string>
+    <string name="custom_url_scheme">com.sentinel.rescuex</string>
+</resources>

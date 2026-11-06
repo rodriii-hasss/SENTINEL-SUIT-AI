@@ -1,0 +1,1012 @@
+// SENTINEL RESCUE-X - Script Principal Funcional
+// Versión: Motor Narrativo Cinematico
+
+'use strict';
+
+const $ = (id) => document.getElementById(id);
+
+// --- CONFIGURACIÓN DE IDIOMA ---
+const I18N = {
+  lang: 'es',
+  setLang: (l) => { I18N.lang = l; document.documentElement.lang = l; },
+  t: (k, args) => {
+    const dict = {
+      es: {
+        'app.title': 'SENTINEL RESCUE-X',
+        'brand.tag': 'Cuando el astronauta no puede pedir ayuda, su traje debe saber cómo actuar',
+        'mc.status.h': 'ESTADO DE LA MISIÓN',
+        'row.mission': 'Misión',
+        'row.astronaut': 'Astronauta',
+        'row.location': 'Ubicación lunar',
+        'row.mtime': 'Tiempo de misión',
+        'row.comm': 'Comunicación',
+        'row.suit': 'Estado del traje',
+        'ind.h': 'INDICADORES SIMULADOS',
+        'ind.hr': 'Frecuencia cardíaca',
+        'ind.spo2': 'Saturación O₂',
+        'ind.press': 'Presión del traje',
+        'ind.co2': 'CO₂ circuito',
+        'ind.batt': 'Batería del traje',
+        'ind.temp': 'Temperatura ref.',
+        'ind.move': 'Movimiento',
+        'ind.orient': 'Orientación',
+        'u.bpm': 'lpm',
+        'u.batt': 'carga',
+        'u.act': 'actimetría sim',
+        'u.orient': 'inclinación',
+        'chart.h': 'TELEMETRÍA HISTÓRICA (90 CICLOS)',
+        'chart.note': 'gráficos generados localmente',
+        'legend.hr': 'FC lpm',
+        'legend.spo2': 'SpO₂ %',
+        'legend.press': 'Presión kPa',
+        'legend.co2': 'CO₂ %',
+        'legend.batt': 'Batería %',
+        'sim.h': 'SIMULADOR DE EMERGENCIAS',
+        'sim.note.head': 'cada botón inyecta un perfil de datos ficticios',
+        'sc.normal.b': 'Funcionamiento normal',
+        'sc.collapse.b': 'Posible desmayo',
+        'sc.fall.b': 'Caída + inmovilidad',
+        'sc.physio.b': 'Anomalía fisiológica',
+        'sc.pressure.b': 'Descenso presión traje',
+        'sc.co2.b': 'Aumento de CO2',
+        'sc.comm.b': 'Pérdida de comunicación',
+        'sc.battery.b': 'Batería baja',
+        'console.h': 'CONSOLA DE SECUENCIA',
+        'console.note': 'registro en vivo del motor de reglas',
+        'stat.response': 'Tiempo de respuesta:',
+        'stat.alerts': 'Alertas activas:',
+        'stat.queue': 'Cola pendiente:',
+        'btn.restore': 'RESTAURAR COMUNICACIÓN (SIM)',
+        'cc.h': 'INCIDENTE',
+        'cc.note': 'visto desde el Centro de Control',
+        'cc.astronaut': 'Astronauta',
+        'cc.active': 'Incidente activo',
+        'cc.logged': 'Registrado',
+        'cc.trigger': 'Condición que activó la alerta',
+        'cc.payload': 'Datos al confirmar',
+        'sev.crit': 'CRÍTICO',
+        'sev.warn': 'ATENCIÓN',
+        'comm.h': 'COMUNICACIONES (SIM)',
+        'comm.note': 'modo sin conexión',
+        'comm.state': 'Estado',
+        'comm.queue': 'Cola de retransmisión',
+        'comm.hint': 'Si el enlace se interrumpe...',
+        'q.none': 'SIN MENSAJES PENDIENTES',
+        'q.pending': '{0} mensaje(s) PENDIENTES en cola de retransmisión (conservados localmente)',
+        'q.empty': 'La cola está vacía: los avisos se están entregando en tiempo real (simulado).',
+        'st.pending': 'PENDIENTE',
+        'st.sent': 'ENVIADO',
+        'st.queued': 'EN COLA',
+        'proto.h': 'PROTOCOLO Y RESCATE',
+        'proto.note': 'fases simuladas del sistema',
+        'proto.checks': 'Comprobaciones del protocolo (ficticias)',
+        'proto.unc': 'Incertidumbres declaradas',
+        'cc.rescueNote': 'El rover virtual se despliega automáticamente...',
+        'ai.label': 'Evaluación de IA de alerta',
+        'ai.note': 'La IA solo explica y prioriza el incidente...',
+        'btn.report': 'GENERAR INFORME PARA EL CENTRO DE CONTROL',
+        'rover.h': 'MAPA LUNAR — RUTA DE RESCATE (SIMULADA)',
+        'rover.note': 'cuadrícula 16×11 · 1 celda = 40 u.n.',
+        'rover.dist': 'Distancia estimada:',
+        'rover.state': 'Estado:',
+        'btn.roverStart': 'INICIAR RUTA DE RESCATE',
+        'btn.roverStop': 'DETENER',
+        'btn.block': 'SIMULAR BLOQUEO TOTAL (DEMO)',
+        'btn.unblock': 'QUITAR BLOQUEO (DEMO)',
+        'legend.astro': 'Astronauta',
+        'legend.rover': 'Rover RX-1',
+        'legend.obs': 'Obstáculo / crátero impracticable',
+        'legend.route': 'Ruta calculada',
+        'rover.hint': 'El rover es un personaje virtual de demostración...',
+        'unit.dist': 'u.n.',
+        'hist.h': 'RESULTADOS DE PRUEBAS REPRODUCIBLES',
+        'hist.note': 'medidos sobre las ejecuciones reales de este navegador',
+        'mtr.scenarios': 'Escenarios ejecutados',
+        'mtr.alerts': 'Alertas activadas',
+        'mtr.correct': 'Alertas correctas (tipo esperado)',
+        'mtr.false': 'Falsas alarmas',
+        'mtr.missed': 'Incidentes no detectados',
+        'mtr.avg': 'Tiempo medio de respuesta del software',
+        'mtr.comm': 'Estado de comunicaciones',
+        'mtr.db': 'Eventos guardados en base de datos SQLite',
+        'hlog.h': 'HISTORIAL COMPLETO DE EVENTOS',
+        'f.all': 'Todos',
+        'f.fisio': 'Fisiología',
+        'f.comms': 'Comunicaciones',
+        'f.rover': 'Rover',
+        'f.sys': 'Sistema',
+        'hist.empty': 'Sin eventos. Abre el SIMULADOR y activa un escenario...',
+        'btn.export': 'EXPORTAR INFORME (.txt)',
+        'btn.resetSim': 'REINICIAR SIMULACIÓN',
+        'about.h': 'ACERCA DEL PROYECTO',
+        'about.lema': '«Cuando el astronauta no puede pedir ayuda, su traje debe saber cómo actuar»',
+        'about.problem.h': 'Problema que se pretende abordar',
+        'about.problem.p': 'Durante una exploración lunar...',
+        'about.solution.h': 'Solución propuesta',
+        'about.solution.p': 'Un traje con un módulo SENTINEL...',
+        'about.innov.h': 'Innovación',
+        'about.innov.p': 'La detección opera en el propio traje...',
+        'about.tech.h': 'Tecnologías utilizadas',
+        'about.tech.li1': 'Frontend: HTML, CSS y JavaScript puro...',
+        'about.tech.li2': 'Backend: Node.js con base de datos SQLite...',
+        'about.tech.li3': 'IA de alerta: OpenAI opcional llamada desde el servidor...',
+        'about.tech.li4': 'Motor ML: clasificador softmax entrenado en el navegador...',
+        'about.tech.li5': 'App instalable (PWA): manifest + service worker...',
+        'about.tech.li6': 'Sin servidor: la aplicación sigue abriendo index.html...',
+        'about.db.h': 'Base de datos e IA de alerta',
+        'about.db.p1': 'Con el servidor usa SQLite con cuatro tablas...',
+        'about.db.p2': 'La IA de alerta se ejecuta al confirmarse un incidente...',
+        'about.lim.h': 'Límites y riesgos',
+        'about.lim.li1': 'Es un prototipo educativo...',
+        'about.lim.li2': 'Las alertas responden a umbrales fijos programados...',
+        'about.lim.li3': 'La inmovilidad o una FC baja no confirman un desmayo...',
+        'about.lim.li4': 'La IA es un apoyo narrativo...',
+        'about.lim.li5': 'La clave de OpenAI vive únicamente en el servidor...',
+        'about.cmp.h': 'Qué funciona en el prototipo vs. qué exigiría un traje real',
+        'about.cmp.th1': 'Prototipo (funciona hoy)',
+        'about.cmp.th2': 'Traje real (a futuro)',
+        'about.cmp.r1a': 'Sensores simulados generados por software',
+        'about.cmp.r1b': 'Bio-monitores certificados...',
+        'about.cmp.r2a': 'Reglas deterministas con umbrales fijos + ML opcional...',
+        'about.cmp.r2b': 'Modelos validados clínicamente...',
+        'about.cmp.r3a': 'Rover virtual animado en un mapa ficticio...',
+        'about.cmp.r3b': 'Robótica autónoma certificada...',
+        'about.cmp.r4a': 'Comunicación simulada con cola local...',
+        'about.cmp.r4b': 'Enlaces reales DSN/orbitales...',
+        'about.cmp.r5a': 'IA de alerta opcional...',
+        'about.cmp.r5b': 'Modelos clínicos validados...',
+        'about.cmp.r6a': 'Alertas en pantalla y sonido del navegador...',
+        'about.cmp.r6b': 'Alertadores integrados al traje...',
+        'about.res.h': 'Resultados de las pruebas',
+        'about.res.p': 'Se calculan en vivo...',
+        'about.app.h': 'Posibles aplicaciones futuras',
+        'about.app.p': 'Monitoreo de expediciones polares o mineras...',
+        'about.n.h': 'Aviso',
+        'about.n.p': 'Proyecto educativo para la clase y preparación del NASA Space Apps Challenge 2026...',
+        'foot.left': 'SENTINEL RESCUE-X · prototipo educativo · todos los datos son simulados',
+        'foot.right': 'sin conexión real con NASA ni ninguna agencia',
+      },
+      en: {
+        'app.title': 'SENTINEL RESCUE-X',
+        'brand.tag': 'When the astronaut cannot call for help, their suit must know how to act',
+        'mc.status.h': 'MISSION STATUS',
+        'row.mission': 'Mission',
+        'row.astronaut': 'Astronaut',
+        'row.location': 'Lunar location',
+        'row.mtime': 'Mission time',
+        'row.comm': 'Communication',
+        'row.suit': 'Suit status',
+        'ind.h': 'SIMULATED INDICATORS',
+        'ind.hr': 'Heart rate',
+        'ind.spo2': 'O₂ saturation',
+        'ind.press': 'Suit pressure',
+        'ind.co2': 'CO₂ loop',
+        'ind.batt': 'Suit battery',
+        'ind.temp': 'Reference temp.',
+        'ind.move': 'Movement',
+        'ind.orient': 'Orientation',
+        'u.bpm': 'bpm',
+        'u.batt': 'charge',
+        'u.act': 'sim actimetry',
+        'u.orient': 'tilt',
+        'chart.h': 'HISTORICAL TELEMETRY (90 CYCLES)',
+        'chart.note': 'locally rendered graphs',
+        'legend.hr': 'HR bpm',
+        'legend.spo2': 'SpO₂ %',
+        'legend.press': 'Pressure kPa',
+        'legend.co2': 'CO₂ %',
+        'legend.batt': 'Battery %',
+        'sim.h': 'EMERGENCY SIMULATOR',
+        'sim.note.head': 'each button injects a fictional data profile',
+        'sc.normal.b': 'Normal operation',
+        'sc.collapse.b': 'Possible fainting',
+        'sc.fall.b': 'Fall + immobility',
+        'sc.physio.b': 'Physiological anomaly',
+        'sc.pressure.b': 'Suit pressure drop',
+        'sc.co2.b': 'CO₂ increase',
+        'sc.comm.b': 'Communication loss',
+        'sc.battery.b': 'Low battery',
+        'console.h': 'SEQUENCE CONSOLE',
+        'console.note': 'live log of the rule engine',
+        'stat.response': 'Response time:',
+        'stat.alerts': 'Active alerts:',
+        'stat.queue': 'Pending queue:',
+        'btn.restore': 'RESTORE COMMUNICATION (SIM)',
+        'cc.h': 'INCIDENT',
+        'cc.note': 'as seen from the Control Center',
+        'cc.astronaut': 'Astronaut',
+        'cc.active': 'Active incident',
+        'cc.logged': 'Logged',
+        'cc.trigger': 'Condition that triggered the alert',
+        'cc.payload': 'Data at confirmation',
+        'sev.crit': 'CRITICAL',
+        'sev.warn': 'WARNING',
+        'comm.h': 'COMUNICACIONES (SIM)',
+        'comm.note': 'modo sin conexión',
+        'comm.state': 'Estado',
+        'comm.queue': 'Cola de retransmisión',
+        'comm.hint': 'Si el enlace se interrumpe...',
+        'q.none': 'SIN MENSAJES PENDIENTES',
+        'q.pending': '{0} mensaje(s) PENDIENTES en cola de retransmisión (conservados localmente)',
+        'q.empty': 'La cola está vacía: los avisos se están entregando en tiempo real (simulado).',
+        'st.pending': 'PENDIENTE',
+        'st.sent': 'ENVIADO',
+        'st.queued': 'EN COLA',
+        'proto.h': 'PROTOCOLO Y RESCATE',
+        'proto.note': 'fases simuladas del sistema',
+        'proto.checks': 'Comprobaciones del protocolo (ficticias)',
+        'proto.unc': 'Incertidumbres declaradas',
+        'cc.rescueNote': 'El rover virtual se despliega automáticamente...',
+        'ai.label': 'Evaluación de IA de alerta',
+        'ai.note': 'La IA solo explica y prioriza el incidente...',
+        'btn.report': 'GENERAR INFORME PARA EL CENTRO DE CONTROL',
+        'rover.h': 'MAPA LUNAR — RUTA DE RESCATE (SIMULADA)',
+        'rover.note': 'cuadrícula 16×11 · 1 celda = 40 u.n.',
+        'rover.dist': 'Distancia estimada:',
+        'rover.state': 'Estado:',
+        'btn.roverStart': 'INICIAR RUTA DE RESCATE',
+        'btn.roverStop': 'DETENER',
+        'btn.block': 'SIMULAR BLOQUEO TOTAL (DEMO)',
+        'btn.unblock': 'QUITAR BLOQUEO (DEMO)',
+        'legend.astro': 'Astronauta',
+        'legend.rover': 'Rover RX-1',
+        'legend.obs': 'Obstáculo / crátero impracticable',
+        'legend.route': 'Ruta calculada',
+        'rover.hint': 'El rover es un personaje virtual de demostración...',
+        'unit.dist': 'u.n.',
+        'hist.h': 'RESULTADOS DE PRUEBAS REPRODUCIBLES',
+        'hist.note': 'medidos sobre las ejecuciones reales de este navegador',
+        'mtr.scenarios': 'Escenarios ejecutados',
+        'mtr.alerts': 'Alertas activadas',
+        'mtr.correct': 'Alertas correctas (tipo esperado)',
+        'mtr.false': 'Falsas alarmas',
+        'mtr.missed': 'Incidentes no detectados',
+        'mtr.avg': 'Tiempo medio de respuesta del software',
+        'mtr.comm': 'Estado de comunicaciones',
+        'mtr.db': 'Eventos guardados en base de datos SQLite',
+        'hlog.h': 'HISTORIAL COMPLETO DE EVENTOS',
+        'f.all': 'Todos',
+        'f.fisio': 'Fisiología',
+        'f.comms': 'Comunicaciones',
+        'f.rover': 'Rover',
+        'f.sys': 'Sistema',
+        'hist.empty': 'Sin eventos. Abre el SIMULADOR y activa un escenario...',
+        'btn.export': 'EXPORTAR INFORME (.txt)',
+        'btn.resetSim': 'REINICIAR SIMULACIÓN',
+        'about.h': 'ACERCA DEL PROYECTO',
+        'about.lema': '«Cuando el astronauta no puede pedir ayuda, su traje debe saber cómo actuar»',
+        'about.problem.h': 'Problema que se pretende abordar',
+        'about.problem.p': 'Durante una exploración lunar...',
+        'about.solution.h': 'Solución propuesta',
+        'about.solution.p': 'Un traje con un módulo SENTINEL...',
+        'about.innov.h': 'Innovación',
+        'about.innov.p': 'La detección opera en el propio traje...',
+        'about.tech.h': 'Tecnologías utilizadas',
+        'about.tech.li1': 'Frontend: HTML, CSS y JavaScript puro...',
+        'about.tech.li2': 'Backend: Node.js con base de datos SQLite...',
+        'about.tech.li3': 'IA de alerta: OpenAI opcional llamada desde el servidor...',
+        'about.tech.li4': 'Motor ML: clasificador softmax entrenado en el navegador...',
+        'about.tech.li5': 'App instalable (PWA): manifest + service worker...',
+        'about.tech.li6': 'Sin servidor: la aplicación sigue abriendo index.html...',
+        'about.db.h': 'Base de datos e IA de alerta',
+        'about.db.p1': 'Con el servidor usa SQLite con cuatro tablas...',
+        'about.db.p2': 'La IA de alerta se ejecuta al confirmarse un incidente...',
+        'about.lim.h': 'Límites y riesgos',
+        'about.lim.li1': 'Es un prototipo educativo...',
+        'about.lim.li2': 'Las alertas responden a umbrales fijos programados...',
+        'about.lim.li3': 'La inmovilidad o una FC baja no confirman un desmayo...',
+        'about.lim.li4': 'La IA es un apoyo narrativo...',
+        'about.lim.li5': 'La clave de OpenAI vive únicamente en el servidor...',
+        'about.cmp.h': 'Qué funciona en el prototipo vs. qué exigiría un traje real',
+        'about.cmp.th1': 'Prototipo (funciona hoy)',
+        'about.cmp.th2': 'Traje real (a futuro)',
+        'about.cmp.r1a': 'Sensores simulados generados por software',
+        'about.cmp.r1b': 'Bio-monitores certificados...',
+        'about.cmp.r2a': 'Reglas deterministas con umbrales fijos + ML opcional...',
+        'about.cmp.r2b': 'Modelos validados clínicamente...',
+        'about.cmp.r3a': 'Rover virtual animado en un mapa ficticio...',
+        'about.cmp.r3b': 'Robótica autónoma certificada...',
+        'about.cmp.r4a': 'Comunicación simulada con cola local...',
+        'about.cmp.r4b': 'Enlaces reales DSN/orbitales...',
+        'about.cmp.r5a': 'IA de alerta opcional...',
+        'about.cmp.r5b': 'Modelos clínicos validados...',
+        'about.cmp.r6a': 'Alertas en pantalla y sonido del navegador...',
+        'about.cmp.r6b': 'Alertadores integrados al traje...',
+        'about.res.h': 'Resultados de las pruebas',
+        'about.res.p': 'Se calculan en vivo...',
+        'about.app.h': 'Posibles aplicaciones futuras',
+        'about.app.p': 'Monitoreo de expediciones polares o mineras...',
+        'about.n.h': 'Aviso',
+        'about.n.p': 'Proyecto educativo para la clase y preparación del NASA Space Apps Challenge 2026...',
+        'foot.left': 'SENTINEL RESCUE-X · prototipo educativo · todos los datos son simulados',
+        'foot.right': 'sin conexión real con NASA ni ninguna agencia',
+      },
+      en: {
+        'app.title': 'SENTINEL RESCUE-X',
+        'brand.tag': 'When the astronaut cannot call for help, their suit must know how to act',
+        'mc.status.h': 'MISSION STATUS',
+        'row.mission': 'Mission',
+        'row.astronaut': 'Astronaut',
+        'row.location': 'Lunar location',
+        'row.mtime': 'Mission time',
+        'row.comm': 'Communication',
+        'row.suit': 'Suit status',
+        'ind.h': 'SIMULATED INDICATORS',
+        'ind.hr': 'Heart rate',
+        'ind.spo2': 'O₂ saturation',
+        'ind.press': 'Suit pressure',
+        'ind.co2': 'CO₂ loop',
+        'ind.batt': 'Suit battery',
+        'ind.temp': 'Reference temp.',
+        'ind.move': 'Movement',
+        'ind.orient': 'Orientation',
+        'u.bpm': 'bpm',
+        'u.batt': 'charge',
+        'u.act': 'sim actimetry',
+        'u.orient': 'tilt',
+        'chart.h': 'HISTORICAL TELEMETRY (90 CYCLES)',
+        'chart.note': 'locally rendered graphs',
+        'legend.hr': 'HR bpm',
+        'legend.spo2': 'SpO₂ %',
+        'legend.press': 'Pressure kPa',
+        'legend.co2': 'CO₂ %',
+        'legend.batt': 'Battery %',
+        'sim.h': 'EMERGENCY SIMULATOR',
+        'sim.note.head': 'each button injects a fictional data profile',
+        'sc.normal.b': 'Normal operation',
+        'sc.collapse.b': 'Possible fainting',
+        'sc.fall.b': 'Fall + immobility',
+        'sc.physio.b': 'Physiological anomaly',
+        'sc.pressure.b': 'Suit pressure drop',
+        'sc.co2.b': 'CO₂ increase',
+        'sc.comm.b': 'Communication loss',
+        'sc.battery.b': 'Low battery',
+        'console.h': 'SEQUENCE CONSOLE',
+        'console.note': 'live log of the rule engine',
+        'stat.response': 'Response time:',
+        'stat.alerts': 'Active alerts:',
+        'stat.queue': 'Pending queue:',
+        'btn.restore': 'RESTORE COMMUNICATION (SIM)',
+        'cc.h': 'INCIDENT',
+        'cc.note': 'as seen from the Control Center',
+        'cc.astronaut': 'Astronaut',
+        'cc.active': 'Active incident',
+        'cc.logged': 'Logged',
+        'cc.trigger': 'Condition that triggered the alert',
+        'cc.payload': 'Data at confirmation',
+        'sev.crit': 'CRITICAL',
+        'sev.warn': 'WARNING',
+        'comm.h': 'COMUNICACIONES (SIM)',
+        'comm.note': 'modo sin conexión',
+        'comm.state': 'Estado',
+        'comm.queue': 'Cola de retransmisión',
+        'comm.hint': 'Si el enlace se interrumpe...',
+        'q.none': 'SIN MENSAJES PENDIENTES',
+        'q.pending': '{0} mensaje(s) PENDIENTES en cola de retransmisión (conservados localmente)',
+        'q.empty': 'La cola está vacía: los avisos se están entregando en tiempo real (simulado).',
+        'st.pending': 'PENDIENTE',
+        'st.sent': 'ENVIADO',
+        'st.queued': 'EN COLA',
+        'proto.h': 'PROTOCOLO Y RESCATE',
+        'proto.note': 'fases simuladas del sistema',
+        'proto.checks': 'Comprobaciones del protocolo (ficticias)',
+        'proto.unc': 'Incertidumbres declaradas',
+        'cc.rescueNote': 'El rover virtual se despliega automáticamente...',
+        'ai.label': 'Evaluación de IA de alerta',
+        'ai.note': 'La IA solo explica y prioriza el incidente...',
+        'btn.report': 'GENERAR INFORME PARA EL CENTRO DE CONTROL',
+        'rover.h': 'MAPA LUNAR — RUTA DE RESCATE (SIMULADA)',
+        'rover.note': 'cuadrícula 16×11 · 1 celda = 40 u.n.',
+        'rover.dist': 'Distancia estimada:',
+        'rover.state': 'Estado:',
+        'btn.roverStart': 'INICIAR RUTA DE RESCATE',
+        'btn.roverStop': 'DETENER',
+        'btn.block': 'SIMULAR BLOQUEO TOTAL (DEMO)',
+        'btn.unblock': 'QUITAR BLOQUEO (DEMO)',
+        'legend.astro': 'Astronauta',
+        'legend.rover': 'Rover RX-1',
+        'legend.obs': 'Obstáculo / crátero impracticable',
+        'legend.route': 'Ruta calculada',
+        'rover.hint': 'El rover es un personaje virtual de demostración...',
+        'unit.dist': 'u.n.',
+        'hist.h': 'RESULTADOS DE PRUEBAS REPRODUCIBLES',
+        'hist.note': 'medidos sobre las ejecuciones reales de este navegador',
+        'mtr.scenarios': 'Escenarios ejecutados',
+        'mtr.alerts': 'Alertas activadas',
+        'mtr.correct': 'Alertas correctas (tipo esperado)',
+        'mtr.false': 'Falsas alarmas',
+        'mtr.missed': 'Incidentes no detectados',
+        'mtr.avg': 'Tiempo medio de respuesta del software',
+        'mtr.comm': 'Estado de comunicaciones',
+        'mtr.db': 'Eventos guardados en base de datos SQLite',
+        'hlog.h': 'HISTORIAL COMPLETO DE EVENTOS',
+        'f.all': 'Todos',
+        'f.fisio': 'Fisiología',
+        'f.comms': 'Comunicaciones',
+        'f.rover': 'Rover',
+        'f.sys': 'Sistema',
+        'hist.empty': 'Sin eventos. Abre el SIMULADOR y activa un escenario...',
+        'btn.export': 'EXPORTAR INFORME (.txt)',
+        'btn.resetSim': 'REINICIAR SIMULACIÓN',
+        'about.h': 'ACERCA DEL PROYECTO',
+        'about.lema': '«Cuando el astronauta no puede pedir ayuda, su traje debe saber cómo actuar»',
+        'about.problem.h': 'Problema que se pretende abordar',
+        'about.problem.p': 'Durante una exploración lunar...',
+        'about.solution.h': 'Solución propuesta',
+        'about.solution.p': 'Un traje con un módulo SENTINEL...',
+        'about.innov.h': 'Innovación',
+        'about.innov.p': 'La detección opera en el propio traje...',
+        'about.tech.h': 'Tecnologías utilizadas',
+        'about.tech.li1': 'Frontend: HTML, CSS y JavaScript puro...',
+        'about.tech.li2': 'Backend: Node.js con base de datos SQLite...',
+        'about.tech.li3': 'IA de alerta: OpenAI opcional llamada desde el servidor...',
+        'about.tech.li4': 'Motor ML: clasificador softmax entrenado en el navegador...',
+        'about.tech.li5': 'App instalable (PWA): manifest + service worker...',
+        'about.tech.li6': 'Sin servidor: la aplicación sigue abriendo index.html...',
+        'about.db.h': 'Base de datos e IA de alerta',
+        'about.db.p1': 'Con el servidor usa SQLite con cuatro tablas...',
+        'about.db.p2': 'La IA de alerta se ejecuta al confirmarse un incidente...',
+        'about.lim.h': 'Límites y riesgos',
+        'about.lim.li1': 'Es un prototipo educativo...',
+        'about.lim.li2': 'Las alertas responden a umbrales fijos programados...',
+        'about.lim.li3': 'La inmovilidad o una FC baja no confirman un desmayo...',
+        'about.lim.li4': 'La IA es un apoyo narrativo...',
+        'about.lim.li5': 'La clave de OpenAI vive únicamente en el servidor...',
+        'about.cmp.h': 'Qué funciona en el prototipo vs. qué exigiría un traje real',
+        'about.cmp.th1': 'Prototipo (funciona hoy)',
+        'about.cmp.th2': 'Traje real (a futuro)',
+        'about.cmp.r1a': 'Sensores simulados generados por software',
+        'about.cmp.r1b': 'Bio-monitores certificados...',
+        'about.cmp.r2a': 'Reglas deterministas con umbrales fijos + ML opcional...',
+        'about.cmp.r2b': 'Modelos validados clínicamente...',
+        'about.cmp.r3a': 'Rover virtual animado en un mapa ficticio...',
+        'about.cmp.r3b': 'Robótica autónoma certificada...',
+        'about.cmp.r4a': 'Comunicación simulada con cola local...',
+        'about.cmp.r4b': 'Enlaces reales DSN/orbitales...',
+        'about.cmp.r5a': 'IA de alerta opcional...',
+        'about.cmp.r5b': 'Modelos clínicos validados...',
+        'about.cmp.r6a': 'Alertas en pantalla y sonido del navegador...',
+        'about.cmp.r6b': 'Alertadores integrados al traje...',
+        'about.res.h': 'Resultados de las pruebas',
+        'about.res.p': 'Se calculan en vivo...',
+        'about.app.h': 'Posibles aplicaciones futuras',
+        'about.app.p': 'Monitoreo de expediciones polares o mineras...',
+        'about.n.h': 'Aviso',
+        'about.n.p': 'Proyecto educativo para la clase y preparación del NASA Space Apps Challenge 2026...',
+        'foot.left': 'SENTINEL RESCUE-X · prototipo educativo · todos los datos son simulados',
+        'foot.right': 'sin conexión real con NASA ni ninguna agencia',
+      },
+      en: {
+        'app.title': 'SENTINEL RESCUE-X',
+        'brand.tag': 'When the astronaut cannot call for help, their suit must know how to act',
+        'mc.status.h': 'MISSION STATUS',
+        'row.mission': 'Mission',
+        'row.astronaut': 'Astronaut',
+        'row.location': 'Lunar location',
+        'row.mtime': 'Mission time',
+        'row.comm': 'Communication',
+        'row.suit': 'Suit status',
+        'ind.h': 'SIMULATED INDICATORS',
+        'ind.hr': 'Heart rate',
+        'ind.spo2': 'O₂ saturation',
+        'ind.press': 'Suit pressure',
+        'ind.co2': 'CO₂ loop',
+        'ind.batt': 'Suit battery',
+        'ind.temp': 'Reference temp.',
+        'ind.move': 'Movement',
+        'ind.orient': 'Orientation',
+        'u.bpm': 'bpm',
+        'u.batt': 'charge',
+        'u.act': 'sim actimetry',
+        'u.orient': 'tilt',
+        'chart.h': 'HISTORICAL TELEMETRY (90 CYCLES)',
+        'chart.note': 'locally rendered graphs',
+        'legend.hr': 'HR bpm',
+        'legend.spo2': 'SpO₂ %',
+        'legend.press': 'Pressure kPa',
+        'legend.co2': 'CO₂ %',
+        'legend.batt': 'Battery %',
+        'sim.h': 'EMERGENCY SIMULATOR',
+        'sim.note.head': 'each button injects a fictional data profile',
+        'sc.normal.b': 'Normal operation',
+        'sc.collapse.b': 'Possible fainting',
+        'sc.fall.b': 'Fall + immobility',
+        'sc.physio.b': 'Physiological anomaly',
+        'sc.pressure.b': 'Suit pressure drop',
+        'sc.co2.b': 'CO₂ increase',
+        'sc.comm.b': 'Communication loss',
+        'sc.battery.b': 'Low battery',
+        'console.h': 'SEQUENCE CONSOLE',
+        'console.note': 'live log of the rule engine',
+        'stat.response': 'Response time:',
+        'stat.alerts': 'Active alerts:',
+        'stat.queue': 'Pending queue:',
+        'btn.restore': 'RESTORE COMMUNICATION (SIM)',
+        'cc.h': 'INCIDENT',
+        'cc.note': 'as seen from the Control Center',
+        'cc.astronaut': 'Astronaut',
+        'cc.active': 'Active incident',
+        'cc.logged': 'Logged',
+        'cc.trigger': 'Condition that triggered the alert',
+        'cc.payload': 'Data at confirmation',
+        'sev.crit': 'CRITICAL',
+        'sev.warn': 'WARNING',
+        'comm.h': 'COMUNICACIONES (SIM)',
+        'comm.note': 'modo sin conexión',
+        'comm.state': 'Estado',
+        'comm.queue': 'Cola de retransmisión',
+        'comm.hint': 'Si el enlace se interrumpe...',
+        'q.none': 'SIN MENSAJES PENDIENTES',
+        'q.pending': '{0} mensaje(s) PENDIENTES en cola de retransmisión (conservados localmente)',
+        'q.empty': 'La cola está vacía: los avisos se están entregando en tiempo real (simulado).',
+        'st.pending': 'PENDIENTE',
+        'st.sent': 'ENVIADO',
+        'st.queued': 'EN COLA',
+        'proto.h': 'PROTOCOLO Y RESCATE',
+        'proto.note': 'fases simuladas del sistema',
+        'proto.checks': 'Comprobaciones del protocolo (ficticias)',
+        'proto.unc': 'Incertidumbres declaradas',
+        'cc.rescueNote': 'El rover virtual se despliega automáticamente...',
+        'ai.label': 'Evaluación de IA de alerta',
+        'ai.note': 'La IA solo explica y prioriza el incidente...',
+        'btn.report': 'GENERAR INFORME PARA EL CENTRO DE CONTROL',
+        'rover.h': 'MAPA LUNAR — RUTA DE RESCATE (SIMULADA)',
+        'rover.note': 'cuadrícula 16×11 · 1 celda = 40 u.n.',
+        'rover.dist': 'Distancia estimada:',
+        'rover.state': 'Estado:',
+        'btn.roverStart': 'INICIAR RUTA DE RESCATE',
+        'btn.roverStop': 'DETENER',
+        'btn.block': 'SIMULAR BLOQUEO TOTAL (DEMO)',
+        'btn.unblock': 'QUITAR BLOQUEO (DEMO)',
+        'legend.astro': 'Astronauta',
+        'legend.rover': 'Rover RX-1',
+        'legend.obs': 'Obstáculo / crátero impracticable',
+        'legend.route': 'Ruta calculada',
+        'rover.hint': 'El rover es un personaje virtual de demostración...',
+        'unit.dist': 'u.n.',
+        'hist.h': 'RESULTADOS DE PRUEBAS REPRODUCIBLES',
+        'hist.note': 'medidos sobre las ejecuciones reales de este navegador',
+        'mtr.scenarios': 'Escenarios ejecutados',
+        'mtr.alerts': 'Alertas activadas',
+        'mtr.correct': 'Alertas correctas (tipo esperado)',
+        'mtr.false': 'Falsas alarmas',
+        'mtr.missed': 'Incidentes no detectados',
+        'mtr.avg': 'Tiempo medio de respuesta del software',
+        'mtr.comm': 'Estado de comunicaciones',
+        'mtr.db': 'Eventos guardados en base de datos SQLite',
+        'hlog.h': 'HISTORIAL COMPLETO DE EVENTOS',
+        'f.all': 'Todos',
+        'f.fisio': 'Fisiología',
+        'f.comms': 'Comunicaciones',
+        'f.rover': 'Rover',
+        'f.sys': 'Sistema',
+        'hist.empty': 'Sin eventos. Abre el SIMULADOR y activa un escenario...',
+        'btn.export': 'EXPORTAR INFORME (.txt)',
+        'btn.resetSim': 'REINICIAR SIMULACIÓN',
+        'about.h': 'ACERCA DEL PROYECTO',
+        'about.lema': '«Cuando el astronauta no puede pedir ayuda, su traje debe saber cómo actuar»',
+        'about.problem.h': 'Problema que se pretende abordar',
+        'about.problem.p': 'Durante una exploración lunar...',
+        'about.solution.h': 'Solución propuesta',
+        'about.solution.p': 'Un traje con un módulo SENTINEL...',
+        'about.innov.h': 'Innovación',
+        'about.innov.p': 'La detección opera en el propio traje...',
+        'about.tech.h': 'Tecnologías utilizadas',
+        'about.tech.li1': 'Frontend: HTML, CSS y JavaScript puro...',
+        'about.tech.li2': 'Backend: Node.js con base de datos SQLite...',
+        'about.tech.li3': 'IA de alerta: OpenAI opcional llamada desde el servidor...',
+        'about.tech.li4': 'Motor ML: clasificador softmax entrenado en el navegador...',
+        'about.tech.li5': 'App instalable (PWA): manifest + service worker...',
+        'about.tech.li6': 'Sin servidor: la aplicación sigue abriendo index.html...',
+        'about.db.h': 'Base de datos e IA de alerta',
+        'about.db.p1': 'Con el servidor usa SQLite con cuatro tablas...',
+        'about.db.p2': 'La IA de alerta se ejecuta al confirmarse un incidente...',
+        'about.lim.h': 'Límites y riesgos',
+        'about.lim.li1': 'Es un prototipo educativo...',
+        'about.lim.li2': 'Las alertas responden a umbrales fijos programados...',
+        'about.lim.li3': 'La inmovilidad o una FC baja no confirman un desmayo...',
+        'about.lim.li4': 'La IA es un apoyo narrativo...',
+        'about.lim.li5': 'La clave de OpenAI vive únicamente en el servidor...',
+        'about.cmp.h': 'Qué funciona en el prototipo vs. qué exigiría un traje real',
+        'about.cmp.th1': 'Prototipo (funciona hoy)',
+        'about.cmp.th2': 'Traje real (a futuro)',
+        'about.cmp.r1a': 'Sensores simulados generados por software',
+        'about.cmp.r1b': 'Bio-monitores certificados...',
+        'about.cmp.r2a': 'Reglas deterministas con umbrales fijos + ML opcional...',
+        'about.cmp.r2b': 'Modelos validados clínicamente...',
+        'about.cmp.r3a': 'Rover virtual animado en un mapa ficticio...',
+        'about.cmp.r3b': 'Robótica autónoma certificada...',
+        'about.cmp.r4a': 'Comunicación simulada con cola local...',
+        'about.cmp.r4b': 'Enlaces reales DSN/orbitales...',
+        'about.cmp.r5a': 'IA de alerta opcional...',
+        'about.cmp.r5b': 'Modelos clínicos validados...',
+        'about.cmp.r6a': 'Alertas en pantalla y sonido del navegador...',
+        'about.cmp.r6b': 'Alertadores integrados al traje...',
+        'about.res.h': 'Resultados de las pruebas',
+        'about.res.p': 'Se calculan en vivo...',
+        'about.app.h': 'Posibles aplicaciones futuras',
+        'about.app.p': 'Monitoreo de expediciones polares o mineras...',
+        'about.n.h': 'Aviso',
+        'about.n.p': 'Proyecto educativo para la clase y preparación del NASA Space Apps Challenge 2026...',
+        'foot.left': 'SENTINEL RESCUE-X · prototipo educativo · todos los datos son simulados',
+        'foot.right': 'sin conexión real con NASA ni ninguna agencia',
+      },
+      en: {
+        'app.title': 'SENTINEL RESCUE-X',
+        'brand.tag': 'When the astronaut cannot call for help, their suit must know how to act',
+        'mc.status.h': 'MISSION STATUS',
+        'row.mission': 'Mission',
+        'row.astronaut': 'Astronaut',
+        'row.location': 'Lunar location',
+        'row.mtime': 'Mission time',
+        'row.comm': 'Communication',
+        'row.suit': 'Suit status',
+        'ind.h': 'SIMULATED INDICATORS',
+        'ind.hr': 'Heart rate',
+        'ind.spo2': 'O₂ saturation',
+        'ind.press': 'Suit pressure',
+        'ind.co2': 'CO₂ loop',
+        'ind.batt': 'Suit battery',
+        'ind.temp': 'Reference temp.',
+        'ind.move': 'Movement',
+        'ind.orient': 'Orientation',
+        'u.bpm': 'bpm',
+        'u.batt': 'charge',
+        'u.act': 'sim actimetry',
+        'u.orient': 'tilt',
+        'chart.h': 'HISTORICAL TELEMETRY (90 CYCLES)',
+        'chart.note': 'locally rendered graphs',
+        'legend.hr': 'HR bpm',
+        'legend.spo2': 'SpO₂ %',
+        'legend.press': 'Pressure kPa',
+        'legend.co2': 'CO₂ %',
+        'legend.batt': 'Battery %',
+        'sim.h': 'EMERGENCY SIMULATOR',
+        'sim.note.head': 'each button injects a fictional data profile',
+        'sc.normal.b': 'Normal operation',
+        'sc.collapse.b': 'Possible fainting',
+        'sc.fall.b': 'Fall + immobility',
+        'sc.physio.b': 'Physiological anomaly',
+        'sc.pressure.b': 'Suit pressure drop',
+        'sc.co2.b': 'CO₂ increase',
+        'sc.comm.b': 'Communication loss',
+        'sc.battery.b': 'Low battery',
+        'console.h': 'SEQUENCE CONSOLE',
+        'console.note': 'live log of the rule engine',
+        'stat.response': 'Response time:',
+        'stat.alerts': 'Active alerts:',
+        'stat.queue': 'Pending queue:',
+        'btn.restore': 'RESTORE COMMUNICATION (SIM)',
+        'cc.h': 'INCIDENT',
+        'cc.note': 'as seen from the Control Center',
+        'cc.astronaut': 'Astronaut',
+        'cc.active': 'Active incident',
+        'cc.logged': 'Logged',
+        'cc.trigger': 'Condition that triggered the alert',
+        'cc.payload': 'Data at confirmation',
+        'sev.crit': 'CRITICAL',
+        'sev.warn': 'WARNING',
+        'comm.h': 'COMUNICACIONES (SIM)',
+        'comm.note': 'modo sin conexión',
+        'comm.state': 'Estado',
+        'comm.queue': 'Cola de retransmisión',
+        'comm.hint': 'Si el enlace se interrumpe...',
+        'q.none': 'SIN MENSAJES PENDIENTES',
+        'q.pending': '{0} mensaje(s) PENDIENTES en cola de retransmisión (conservados localmente)',
+        'q.empty': 'La cola está vacía: los avisos se están entregando en tiempo real (simulado).',
+        'st.pending': 'PENDIENTE',
+        'st.sent': 'ENVIADO',
+        'st.queued': 'EN COLA',
+        'proto.h': 'PROTOCOLO Y RESCATE',
+        'proto.note': 'fases simuladas del sistema',
+        'proto.checks': 'Comprobaciones del protocolo (ficticias)',
+        'proto.unc': 'Incertidumbres declaradas',
+        'cc.rescueNote': 'El rover virtual se despliega automáticamente...',
+        'ai.label': 'Evaluación de IA de alerta',
+        'ai.note': 'La IA solo explica y prioriza el incidente...',
+        'btn.report': 'GENERAR INFORME PARA EL CENTRO DE CONTROL',
+        'rover.h': 'MAPA LUNAR — RUTA DE RESCATE (SIMULADA)',
+        'rover.note': 'cuadrícula 16×11 · 1 celda = 40 u.n.',
+        'rover.dist': 'Distancia estimada:',
+        'rover.state': 'Estado:',
+        'btn.roverStart': 'INICIAR RUTA DE RESCATE',
+        'btn.roverStop': 'DETENER',
+        'btn.block': 'SIMULAR BLOQUEO TOTAL (DEMO)',
+        'btn.unblock': 'QUITAR BLOQUEO (DEMO)',
+        'legend.astro': 'Astronauta',
+        'legend.rover': 'Rover RX-1',
+        'legend.obs': 'Obstáculo / crátero impracticable',
+        'legend.route': 'Ruta calculada',
+        'rover.hint': 'El rover es un personaje virtual de demostración...',
+        'unit.dist': 'u.n.',
+        'hist.h': 'RESULTADOS DE PRUEBAS REPRODUCIBLES',
+        'hist.note': 'medidos sobre las ejecuciones reales de este navegador',
+        'mtr.scenarios': 'Escenarios ejecutados',
+        'mtr.alerts': 'Alertas activadas',
+        'mtr.correct': 'Alertas correctas (tipo esperado)',
+        'mtr.false': 'Falsas alarmas',
+        'mtr.missed': 'Incidentes no detectados',
+        'mtr.avg': 'Tiempo medio de respuesta del software',
+        'mtr.comm': 'Estado de comunicaciones',
+        'mtr.db': 'Eventos guardados en base de datos SQLite',
+        'hlog.h': 'HISTORIAL COMPLETO DE EVENTOS',
+        'f.all': 'Todos',
+        'f.fisio': 'Fisiología',
+        'f.comms': 'Comunicaciones',
+        'f.rover': 'Rover',
+        'f.sys': 'Sistema',
+        'hist.empty': 'Sin eventos. Abre el SIMULADOR y activa un escenario...',
+        'btn.export': 'EXPORTAR INFORME (.txt)',
+        'btn.resetSim': 'REINICIAR SIMULACIÓN',
+        'about.h': 'ACERCA DEL PROYECTO',
+        'about.lema': '«Cuando el astronauta no puede pedir ayuda, su traje debe saber cómo actuar»',
+        'about.problem.h': 'Problema que se pretende abordar',
+        'about.problem.p': 'Durante una exploración lunar...',
+        'about.solution.h': 'Solución propuesta',
+        'about.solution.p': 'Un traje con un módulo SENTINEL...',
+        'about.innov.h': 'Innovación',
+        'about.innov.p': 'La detección opera en el propio traje...',
+        'about.tech.h': 'Tecnologías utilizadas',
+        'about.tech.li1': 'Frontend: HTML, CSS y JavaScript puro...',
+        'about.tech.li2': 'Backend: Node.js con base de datos SQLite...',
+        'about.tech.li3': 'IA de alerta: OpenAI opcional llamada desde el servidor...',
+        'about.tech.li4': 'Motor ML: clasificador softmax entrenado en el navegador...',
+        'about.tech.li5': 'App instalable (PWA): manifest + service worker...',
+        'about.tech.li6': 'Sin servidor: la aplicación sigue abriendo index.html...',
+        'about.db.h': 'Base de datos e IA de alerta',
+        'about.db.p1': 'Con el servidor usa SQLite con cuatro tablas...',
+        'about.db.p2': 'La IA de alerta se ejecuta al confirmarse un incidente...',
+        'about.lim.h': 'Límites y riesgos',
+        'about.lim.li1': 'Es un prototipo educativo...',
+        'about.lim.li2': 'Las alertas responden a umbrales fijos programados...',
+        'about.lim.li3': 'La inmovilidad o una FC baja no confirman un desmayo...',
+        'about.lim.li4': 'La IA es un apoyo narrativo...',
+        'about.lim.li5': 'La clave de OpenAI vive únicamente en el servidor...',
+        'about.cmp.h': 'Qué funciona en el prototipo vs. qué exigiría un traje real',
+        'about.cmp.th1': 'Prototipo (funciona hoy)',
+        'about.cmp.th2': 'Traje real (a futuro)',
+        'about.cmp.r1a': 'Sensores simulados generados por software',
+        'about.cmp.r1b': 'Bio-monitores certificados...',
+        'about.cmp.r2a': 'Reglas deterministas con umbrales fijos + ML opcional...',
+        'about.cmp.r2b': 'Modelos validados clínicamente...',
+        'about.cmp.r3a': 'Rover virtual animado en un mapa ficticio...',
+        'about.cmp.r3b': 'Robótica autónoma certificada...',
+        'about.cmp.r4a': 'Comunicación simulada con cola local...',
+        'about.cmp.r4b': 'Enlaces reales DSN/orbitales...',
+        'about.cmp.r5a': 'IA de alerta opcional...',
+        'about.cmp.r5b': 'Modelos clínicos validados...',
+        'about.cmp.r6a': 'Alertas en pantalla y sonido del navegador...',
+        'about.cmp.r6b': 'Alertadores integrados al traje...',
+        'about.res.h': 'Resultados de las pruebas',
+        'about.res.p': 'Se calculan en vivo...',
+        'about.app.h': 'Posibles aplicaciones futuras',
+        'about.app.p': 'Monitoreo de expediciones polares o mineras...',
+        'about.n.h': 'Aviso',
+        'about.n.p': 'Proyecto educativo para la clase y preparación del NASA Space Apps Challenge 2026...',
+        'foot.left': 'SENTINEL RESCUE-X · prototipo educativo · todos los datos son simulados',
+        'foot.right': 'sin conexión real con NASA ni ninguna agencia',
+      }
+    };
+    const d = dict[I18N.lang] || dict.es;
+    let v = d[k];
+    if (v == null) v = dict.es[k];
+    if (v == null) v = k;
+    if (args != null) {
+      const list = Array.isArray(args) ? args : [args];
+      v = String(v).replace(/\{(\d+)\}/g, (m, i) => {
+        const val = list[Number(i)];
+        return val == null ? '' : String(val);
+      });
+    }
+    return v;
+  }
+};
+
+// --- CONFIGURACIÓN BASE ---
+const MISSION = { name: 'RESCUE-X', astronaut: 'ASTR-02 · HALLEY', location: 'Mare Imbrium — Sector 7 / EVA-04' };
+const BASE = { hr: 72, spo2: 97.8, press: 101.3, temp: 36.8, co2: 0.42, batt: 86, activity: 42, orient: 8 };
+const RULE = { hrLow: 52, hrHigh: 128, hrHighCrit: 138, spo2Warn: 93, pressWarn: 84, pressCrit: 68, co2Warn: 1.1, co2Crit: 2.0, battWarn: 25, battCrit: 12, actStill: 6, orientFall: 58, persist: 5 };
+
+// --- MÁQUINA DE ESTADOS ---
+const STATES = {
+  EXPLORATION: 'EXPLORACIÓN',
+  IMPACT: 'IMPACTO DETECTADO',
+  VERIFYING: 'VERIFICANDO RESPUESTA',
+  EMERGENCY: 'EMERGENCIA ACTIVA',
+  RESCUE_SENT: 'SOLICITANDO RESCATE',
+  RESCUE_ARRIVAL: 'RESCATE EN CAMINO',
+  CLOSED: 'INCIDENTE CERRADO'
+};
+
+let systemState = {
+  current: STATES.EXPLORATION,
+  t: 0,
+  comm: true,
+  suit: 'normal',
+  sim: Object.assign({}, BASE),
+  targets: Object.assign({}, BASE),
+  scenario: null,
+  metrics: { scenarios: 0, alerts: 0 },
+  soundOn: true
+};
+
+// --- AUDIO Y COMUNICACIONES ---
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); }
+
+function playAlert(freqs, dur, interval) {
+  initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  let t = audioCtx.currentTime;
+  freqs.forEach((f, i) => {
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.frequency.value = f;
+    g.gain.value = 0.1;
+    o.connect(g);
+    g.connect(audioCtx.destination);
+    o.start(t + i * interval);
+    o.stop(t + dur + i * interval);
+    t += interval;
+  });
+}
+
+// --- LÓGICA DE SIMULACIÓN ---
+
+function logToConsole(msg, severity = 'info') {
+  const con = $('emergencyConsole');
+  const line = document.createElement('div');
+  line.className = `console-line ${severity === 'crit' ? 'sev-crit' : severity === 'warn' ? 'sev-warn' : ''}`;
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  con.prepend(line);
+}
+
+function cargarEscenario(scenario) {
+  systemState.scenario = scenario;
+  systemState.metrics.scenarios++;
+  
+  const profiles = {
+    normal: { hr: 72, spo2: 98, press: 101, temp: 36.6, co2: 0.4, batt: 80, activity: 40, orient: 5 },
+    collapse: { hr: 45, spo2: 91, press: 101, temp: 36.2, co2: 0.5, batt: 70, activity: 2, orient: 10 },
+    fall: { hr: 110, spo2: 95, press: 101, temp: 36.6, co2: 0.4, batt: 65, activity: 0, orient: 90 },
+    physio: { hr: 145, spo2: 94, press: 101, temp: 38.5, co2: 0.4, batt: 60, activity: 10, orient: 15 },
+    pressure: { hr: 115, spo2: 88, press: 60, temp: 35.5, co2: 0.4, batt: 50, activity: 15, orient: 20 },
+    co2: { hr: 105, spo2: 92, press: 101, temp: 36.8, co2: 2.5, batt: 40, activity: 10, orient: 10 },
+    comm: { hr: 72, spo2: 98, press: 101, temp: 36.6, co2: 0.4, batt: 80, activity: 40, orient: 5, comm: false },
+    battery: { hr: 75, spo2: 98, press: 101, temp: 36.6, co2: 0.4, batt: 10, activity: 30, orient: 5 }
+  };
+
+  const p = profiles[scenario] || profiles.normal;
+  systemState.targets = Object.assign({}, p);
+  
+  if (scenario === 'comm') systemState.comm = false;
+  if (scenario === 'normal') systemState.comm = true;
+
+  logToConsole(`ESCENARIO ACTIVADO: ${scenario.toUpperCase()}`);
+  
+  // Trigger Story State
+  if (scenario === 'normal') {
+    systemState.current = STATES.EXPLORATION;
+    window.updateAstronautState('NORMAL');
+  } else {
+    systemState.current = STATES.IMPACT;
+    window.updateAstronautState('COLLAPSED');
+    playAlert([200, 150, 100], 200, 300);
+    logToConsole('¡IMPACTO DETECTADO! Iniciando protocolo de seguridad...', 'crit');
+  }
+}
+
+function simulationLoop() {
+  systemState.t += 0.1;
+  
+  // Interpolación de sensores
+  for (let k in systemState.sim) {
+    if (systemState.targets[k] !== undefined) {
+      systemState.sim[k] += (systemState.targets[k] - systemState.sim[k]) * 0.1;
+    }
+  }
+  
+  checkRules();
+  actualizarUI();
+}
+
+function checkRules() {
+  let critical = false;
+  let warn = false;
+
+  if (systemState.sim.hr < RULE.hrLow || systemState.sim.hr > RULE.hrHigh) warn = true;
+  if (systemState.sim.spo2 < RULE.spo2Warn) warn = true;
+  if (systemState.sim.press < RULE.pressWarn) warn = true;
+  if (systemState.sim.co2 > RULE.co2Warn) warn = true;
+  if (systemState.sim.batt < RULE.battWarn) warn = true;
+  if (systemState.sim.press < RULE.pressCrit) critical = true;
+
+  if (critical) systemState.suit = 'critical';
+  else if (warn) systemState.suit = 'attention';
+  else systemState.suit = 'normal';
+}
+
+function actualizarUI() {
+  $('vAstronaut').textContent = MISSION.astronaut;
+  $('vLocation').textContent = MISSION.location;
+  $('missionClock').textContent = `T+${systemState.t.toFixed(1)}`;
+  
+  const commPill = $('commStatus');
+  commPill.textContent = systemState.comm ? 'ENLACE NOMINAL' : 'ENLACE INTERRUMPIDO';
+  commPill.className = `pill ${systemState.comm ? 'ok' : 'danger'}`;
+  
+  const inds = {
+    vHr: systemState.sim.hr.toFixed(0), 
+    vSpo2: systemState.sim.spo2.toFixed(1), 
+    vPress: systemState.sim.press.toFixed(1),
+    vCo2: systemState.sim.co2.toFixed(2), 
+    vBatt: systemState.sim.batt.toFixed(0) + '%', 
+    vTemp: systemState.sim.temp.toFixed(1),
+    vOrient: systemState.sim.orient.toFixed(0) + '°'
+  };
+  for (let id in inds) {
+    const el = $(id);
+    if (el) el.textContent = inds[id];
+  }
+  $('vActivity').textContent = systemState.sim.activity > 10 ? 'ACTIVO' : 'INMÓVIL';
+  
+  $('suitName').textContent = systemState.suit.toUpperCase();
+  $('suitName').className = `pill ${systemState.suit === 'normal' ? 'ok' : 'danger'}`;
+}
+
+function cambiarTab(tabId) {
+  document.querySelectorAll('.tab').forEach(section => {
+    section.hidden = true;
+    section.classList.remove('active');
+  });
+  const target = document.getElementById('tab-' + tabId);
+  if (target) {
+    target.hidden = false;
+    target.classList.add('active');
+  }
+  document.querySelectorAll('.nav-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tabId);
+  });
+}
+
+function filtrarHistorial(filter) {
+  document.querySelectorAll('.filter').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === filter);
+  });
+}
+
+function actualizarIdioma() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = I18N.t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    el.innerHTML = I18N.t(el.getAttribute('data-i18n-html'));
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initAudio();
+  actualizarIdioma();
+  setInterval(simulationLoop, 100);
+  
+  // Init 3D
+  if (window.initLunarScene) window.initLunarScene();
+});
+
+// Eventos
+document.querySelectorAll('[data-scenario]').forEach(b => {
+  b.addEventListener('click', () => cargarEscenario(b.dataset.scenario));
+});
+
+document.querySelectorAll('.nav-tab').forEach(b => {
+  b.addEventListener('click', () => cambiarTab(b.dataset.tab));
+});
+
+document.querySelectorAll('.filter').forEach(b => {
+  b.addEventListener('click', () => filtrarHistorial(b.dataset.filter));
+});
+
+window.I18N = I18N;
+window.cambiarTab = cambiarTab;

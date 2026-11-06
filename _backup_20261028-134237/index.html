@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#040a14">
+<meta name="description" content="SENTINEL RESCUE-X — sistema simulado de rescate de astronautas: telemetría ficticia, detección por reglas, ML en el navegador y rover de rescate (prototipo educativo).">
+<title>SENTINEL RESCUE-X</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div id="alertBanner" class="alert-banner hidden">
+  <span class="ab-icon" aria-hidden="true"></span>
+  <span id="alertBannerText" class="ab-text">ALERTA</span>
+  <button id="alertAck" class="ab-ack" data-i18n="btn.ack">RECONOCER</button>
+</div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+    <div class="brand-text">
+      <h1>SENTINEL <em>RESCUE-X</em></h1>
+      <p data-i18n="brand.tag">Cuando el astronauta no puede pedir ayuda, su traje debe saber cómo actuar</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <div class="lang-sw" role="group" aria-label="Idioma / Language">
+      <button id="langEs" class="lbtn active" type="button">ES</button>
+      <button id="langEn" class="lbtn" type="button">EN</button>
+    </div>
+    <button id="btnInstall" class="chip-btn" hidden data-i18n="btn.install">INSTALAR APP</button>
+    <span class="chip chip-sim" data-i18n="chip.sim" title="Todos los datos de esta aplicación son simulados y se generan localmente">DATOS 100% SIMULADOS</span>
+    <span id="dbChip" class="chip">DB: LOCAL</span>
+    <span id="headerCommChip" class="chip">COMMS: NOMINAL</span>
+    <button id="soundBtn" class="chip-btn" data-i18n="sound.on">SONIDO: ON</button>
+    <button id="btnResetTop" class="chip-btn danger" data-i18n="btn.reset">REINICIAR</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="nav-tab active" data-tab="control" data-i18n="tab.control">Control misión</button>
+  <button class="nav-tab" data-tab="emergency" data-i18n="tab.emergency">Simulador</button>
+  <button class="nav-tab" data-tab="cc" data-i18n="tab.cc">Centro de control</button>
+  <button class="nav-tab" data-tab="rover" data-i18n="tab.rover">Rover rescate</button>
+  <button class="nav-tab" data-tab="history" data-i18n="tab.history">Historial y pruebas</button>
+  <button class="nav-tab" data-tab="about" data-i18n="tab.about">Acerca del proyecto</button>
+</nav>
+
+<main class="wrap">
+
+  <!-- ================= CONTROL MISIÓN ================= -->
+  <section id="tab-control" class="tab">
+    <div class="split-2">
+      <div class="panel">
+        <div class="panel-head"><h2 data-i18n="mc.status.h">ESTADO DE LA MISIÓN</h2><span class="ph-note" data-i18n="mc.status.note">telemetría ficticia en vivo</span></div>
+        <div class="rows">
+          <div class="row"><span class="k" data-i18n="row.mission">Misión</span><span class="v" data-mission-name>—</span></div>
+          <div class="row"><span class="k" data-i18n="row.astronaut">Astronauta</span><span class="v" id="vAstronaut">—</span></div>
+          <div class="row"><span class="k" data-i18n="row.location">Ubicación lunar</span><span class="v" id="vLocation">—</span></div>
+          <div class="row"><span class="k" data-i18n="row.mtime">Tiempo de misión</span><span class="v mono" id="missionClock">T+00:00:00</span></div>
+          <div class="row"><span class="k" data-i18n="row.comm">Comunicación</span><span class="pill ok" id="commStatus">ENLACE NOMINAL</span></div>
+          <div class="row"><span class="k" data-i18n="row.suit">Estado del traje</span><span class="pill ok" id="suitName">NORMAL</span></div>
+        </div>
+        <div class="panel-foot mono"><span id="vSaved">local</span><span data-i18n="mc.foot">almacenamiento del navegador (demostración)</span></div>
+      </div>
+
+      <div class="panel visual-panel">
+        <div class="panel-head"><h2 data-i18n="suit.h">TRAJE EVA — VISTA OPERADOR</h2><span class="ph-note" data-i18n="suit.note">representación no métrica</span></div>
+        <div class="visual-stage">
+          <svg id="astroVisual" class="st-normal" viewBox="0 0 220 260" role="img" aria-label="Astronauta simulado">
+            <circle class="a-ring" cx="110" cy="128" r="92"/>
+            <line class="a-line" x1="64" y1="38" x2="88" y2="52"/>
+            <circle class="a-antenna" cx="62" cy="36" r="4"/>
+            <rect class="a-pack" x="52" y="66" width="24" height="80" rx="7"/>
+            <line class="a-armL" x1="88" y1="106" x2="66" y2="150"/>
+            <line class="a-armR" x1="132" y1="106" x2="156" y2="148"/>
+            <rect class="a-torso" x="82" y="94" width="56" height="82" rx="14"/>
+            <rect class="a-screen" x="94" y="112" width="32" height="22" rx="4"/>
+            <circle class="a-led led1" cx="100" cy="123" r="2.6"/>
+            <circle class="a-led led2" cx="110" cy="123" r="2.6"/>
+            <circle class="a-led led3" cx="120" cy="123" r="2.6"/>
+            <line class="a-legL" x1="97" y1="176" x2="92" y2="222"/>
+            <line class="a-legR" x1="123" y1="176" x2="128" y2="222"/>
+            <rect class="a-boot" x="84" y="222" width="20" height="12" rx="4"/>
+            <rect class="a-boot" x="116" y="222" width="20" height="12" rx="4"/>
+            <circle class="a-helmet" cx="110" cy="64" r="34"/>
+            <ellipse class="a-visor" cx="110" cy="64" rx="26" ry="20"/>
+            <path class="a-shine" d="M94 56 q10 -12 26 -8"/>
+            <circle class="a-status" cx="110" cy="20" r="6"/>
+            <text class="a-name" x="110" y="248" text-anchor="middle">ASTR-02 · EVA-04 · SIM</text>
+          </svg>
+          <p class="visual-note" data-i18n="visual.note">La ilustración refleja el estado simulado (normal / atención / crítico). No representa a una persona real.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="ind.h">INDICADORES SIMULADOS</h2><span class="ph-note" data-i18n="ind.note">umbral de reglas programadas — no son límites médicos ni aeroespaciales reales</span></div>
+      <div class="indicators">
+        <div class="ind" id="indHr">
+          <div class="ind-top"><span class="ind-label" data-i18n="ind.hr">Frecuencia cardíaca</span><span class="ind-dot"></span></div>
+          <div class="ind-value"><span id="vHr" class="num">72</span><span class="ind-unit" data-i18n="u.bpm">lpm</span></div>
+          <span class="trend" id="tHr">↔ estable</span>
+        </div>
+        <div class="ind" id="indSpo2">
+          <div class="ind-top"><span class="ind-label" data-i18n="ind.spo2">Saturación O₂</span><span class="ind-dot"></span></div>
+          <div class="ind-value"><span id="vSpo2" class="num">97.8</span><span class="ind-unit">% sim</span></div>
+          <span class="trend" id="tSpo2">↔ estable</span>
+        </div>
+        <div class="ind" id="indPress">
+          <div class="ind-top"><span class="ind-label" data-i18n="ind.press">Presión del traje</span><span class="ind-dot"></span></div>
+          <div class="ind-value"><span id="vPress" class="num">101.3</span><span class="ind-unit">kPa sim</span></div>
+          <span class="trend" id="tPress">↔ estable</span>
+        </div>
+        <div class="ind" id="indCo2">
+          <div class="ind-top"><span class="ind-label" data-i18n="ind.co2">CO₂ circuito</span><span class="ind-dot"></span></div>
+          <div class="ind-value"><span id="vCo2" class="num">0.42</span><span class="ind-unit">% sim</span></div>
+          <span class="trend" id="tCo2">↔ estable</span>
+        </div>
+        <div class="ind" id="indBatt">
+          <div class="ind-top"><span class="ind-label" data-i18n="ind.batt">Batería del traje</span><span class="ind-dot"></span></div>
+          <div class="ind-value"><span id="vBatt" class="num">86%</span><span class="ind-unit" data-i18n="u.batt">carga</span></div>
+          <span class="trend" id="tBatt">↔ estable</span>
+        </div>
+        <div class="ind" id="indTemp">
+          <div class="ind-top"><span class="ind-label" data-i18n="ind.temp">Temperatura ref.</span><span class="ind-dot"></span></div>
+          <div class="ind-value"><span id="vTemp" class="num">36.8</span><span class="ind-unit">°C sim</span></div>
+          <span class="trend" id="tTemp">↔ estable</span>
+        </div>
+        <div class="ind" id="indMove">
+          <div class="ind-top"><span class="ind-label" data-i18n="ind.move">Movimiento</span><span class="ind-dot"></span></div>
+          <div class="ind-value"><span id="vActivity" class="num small">ACTIVO</span><span class="ind-unit" data-i18n="u.act">actimetría sim</span></div>
+          <span class="trend" id="tMove">↔ estable</span>
+        </div>
+        <div class="ind" id="indOrient">
+          <div class="ind-top"><span class="ind-label" data-i18n="ind.orient">Orientación</span><span class="ind-dot"></span></div>
+          <div class="ind-value"><span id="vOrient" class="num">8°</span><span class="ind-unit" data-i18n="u.orient">inclinación</span></div>
+          <span class="trend" id="tOrient">↔ estable</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel ml-panel">
+      <div class="panel-head"><h2 data-i18n="ml.h">MOTOR ML — CLASIFICADOR DE ANOMALÍAS</h2><span class="ph-note" data-i18n="ml.note.head">regresión softmax entrenada en el navegador con datos ficticios</span></div>
+      <div class="split-2 ml-grid">
+        <div>
+          <div class="rows">
+            <div class="row"><span class="k" data-i18n="ml.pred">Predicción en vivo</span><span class="pill" id="mlPred">—</span></div>
+            <div class="row"><span class="k" data-i18n="ml.conf">Confianza</span><span class="mono" id="mlConfTxt">—</span></div>
+          </div>
+          <div class="prog"><i id="mlConfBar"></i></div>
+          <div id="mlTop3" class="ml-top3 mono"></div>
+        </div>
+        <div>
+          <div class="rows">
+            <div class="row"><span class="k" data-i18n="ml.samples">Muestras en el buffer</span><span class="mono" id="mlSamples">0</span></div>
+            <div class="row"><span class="k" data-i18n="ml.epochs">Épocas acumuladas</span><span class="mono" id="mlEpochs">0</span></div>
+            <div class="row"><span class="k" data-i18n="ml.acc">Exactitud en validación</span><span class="mono" id="mlAcc">—</span></div>
+            <div class="row"><span class="k" data-i18n="ml.last">Última verificación con escenario</span><span class="mono" id="mlLastTruth">—</span></div>
+          </div>
+          <div class="actions">
+            <button id="btnMlTrain" class="ghost" data-i18n="ml.train">REENTRENAR AHORA</button>
+            <button id="btnMlAuto" class="ghost" data-i18n="ml.auto.on">APRENDIZAJE EN VIVO: ON</button>
+            <button id="btnMlGen" class="primary" data-i18n="ml.gen">GENERAR +50 MUESTRAS SINTÉTICAS</button>
+          </div>
+        </div>
+      </div>
+      <p class="note" data-i18n="ml.note">El modelo (regresión softmax, 7 clases × 8 señales) se entrena con perfiles sintéticos de los escenarios y con tus ejecuciones reales mientras la app está abierta. Solo ayuda a anticipar el tipo de incidente: la alerta la sigue decidiendo el motor de reglas determinista. Sin datos reales ni valor clínico.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="chart.h">TELEMETRÍA HISTÓRICA (90 CICLOS)</h2><span class="ph-note" data-i18n="chart.note">gráficos generados localmente</span></div>
+      <canvas id="telemetryChart" height="180"></canvas>
+      <div class="legend">
+        <span class="lg"><i style="--c:#00d4ff"></i><span data-i18n="legend.hr">FC lpm</span></span>
+        <span class="lg"><i style="--c:#00e676"></i><span data-i18n="legend.spo2">SpO₂ %</span></span>
+        <span class="lg"><i style="--c:#ff6b35"></i><span data-i18n="legend.press">Presión kPa</span></span>
+        <span class="lg"><i style="--c:#ff3d5e"></i><span data-i18n="legend.co2">CO₂ %</span></span>
+        <span class="lg"><i style="--c:#ffb400"></i><span data-i18n="legend.batt">Batería %</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SIMULADOR ================= -->
+  <section id="tab-emergency" class="tab" hidden>
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="sim.h">SIMULADOR DE EMERGENCIAS</h2><span class="ph-note" data-i18n="sim.note.head">cada botón inyecta un perfil de datos ficticios</span></div>
+      <p class="note" data-i18n-html="sim.intro">Las alertas se activan con reglas deterministas programadas en el navegador (sin IA externa). El sistema distingue <b>detección</b>, <b>verificación</b> y <b>confirmación simulada</b>, y se refiere siempre a <b>posible emergencia</b>: nunca afirma un diagnóstico.</p>
+      <div class="scenarios">
+        <button class="sc sc-normal" data-scenario="normal"><b data-i18n="sc.normal.b">Funcionamiento normal</b><small data-i18n="sc.normal.s">Restablece parámetros nominales y comunicación</small></button>
+        <button class="sc sc-collapse" data-scenario="collapse"><b data-i18n="sc.collapse.b">Posible desmayo</b><small data-i18n="sc.collapse.s">FC baja sostenida + inmovilidad</small></button>
+        <button class="sc sc-fall" data-scenario="fall"><b data-i18n="sc.fall.b">Caída + inmovilidad</b><small data-i18n="sc.fall.s">Orientación > 60° sin actividad</small></button>
+        <button class="sc sc-physio" data-scenario="physio"><b data-i18n="sc.physio.b">Anomalía fisiológica</b><small data-i18n="sc.physio.s">FC errática + temperatura fuera de rango</small></button>
+        <button class="sc sc-pressure" data-scenario="pressure"><b data-i18n="sc.pressure.b">Descenso presión traje</b><small data-i18n="sc.pressure.s">Caída progresiva de presión simulada</small></button>
+        <button class="sc sc-co2" data-scenario="co2"><b data-i18n="sc.co2.b">Aumento de CO2</b><small data-i18n="sc.co2.s">Filtro saturado (perfil ficticio)</small></button>
+        <button class="sc sc-comm" data-scenario="comm"><b data-i18n="sc.comm.b">Pérdida de comunicación</b><small data-i18n="sc.comm.s">Enlace Tierra interrumpido — modo autónomo</small></button>
+        <button class="sc sc-battery" data-scenario="battery"><b data-i18n="sc.battery.b">Batería baja</b><small data-i18n="sc.battery.s">Drenaje acelerado de la carga simulada</small></button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="console.h">CONSOLA DE SECUENCIA</h2><span class="ph-note" data-i18n="console.note">registro en vivo del motor de reglas</span></div>
+      <div id="emergencyConsole" class="console"></div>
+      <div class="stats mono">
+        <span><span data-i18n="stat.response">Tiempo de respuesta:</span> <b id="statResponse">—</b></span>
+        <span><span data-i18n="stat.alerts">Alertas activas:</span> <b id="statAlerts">0</b></span>
+        <span><span data-i18n="stat.queue">Cola pendiente:</span> <b id="statQueue">0</b></span>
+      </div>
+      <button id="btnCommRestore" class="ghost" hidden data-i18n="btn.restore">RESTAURAR COMUNICACIÓN (SIM)</button>
+    </div>
+  </section>
+
+  <!-- ================= CENTRO DE CONTROL ================= -->
+  <section id="tab-cc" class="tab" hidden>
+    <div class="split-2">
+      <div class="panel">
+        <div class="panel-head"><h2 data-i18n="cc.h">INCIDENTE</h2><span class="ph-note" data-i18n="cc.note">visto desde el Centro de Control</span></div>
+        <div class="rows">
+          <div class="row"><span class="k" data-i18n="cc.astronaut">Astronauta</span><span class="v" id="vAstronaut2">ASTR-02 · HALLEY</span></div>
+          <div class="row"><span class="k" data-i18n="cc.active">Incidente activo</span><span class="v" id="ccIncident">—</span></div>
+          <div class="row"><span class="k" data-i18n="cc.logged">Registrado</span><span class="v mono" id="ccIncidentTime">—</span></div>
+        </div>
+        <div class="block">
+          <span class="k" data-i18n="cc.trigger">Condición que activó la alerta</span>
+          <p id="ccTrigger">—</p>
+        </div>
+        <div class="block">
+          <span class="k" data-i18n="cc.payload">Datos al confirmar</span>
+          <p id="ccPayload" class="mono">—</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2 data-i18n="comm.h">COMUNICACIONES (SIM)</h2><span class="ph-note" data-i18n="comm.note">modo sin conexión</span></div>
+        <div class="rows">
+          <div class="row"><span class="k" data-i18n="comm.state">Estado</span><span class="pill ok" id="ccCommMirror">ENLACE NOMINAL</span></div>
+        </div>
+        <div class="block">
+          <span class="k" data-i18n="comm.queue">Cola de retransmisión</span>
+          <p id="ccQueue">SIN MENSAJES PENDIENTES</p>
+        </div>
+        <div id="queueList" class="mini-list"></div>
+        <p class="note" data-i18n="comm.hint">Si el enlace se interrumpe, las reglas de detección siguen funcionando en local, los eventos se guardan en el navegador y los mensajes quedan en cola. Al restaurarse, se marcan como enviados (dentro de la simulación).</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="proto.h">PROTOCOLO Y RESCATE</h2><span class="ph-note" data-i18n="proto.note">fases simuladas del sistema</span></div>
+      <div class="split-2">
+        <div>
+          <div class="big-val" id="ccProtocol">PROTOCOLO NORMAL</div>
+          <div class="block"><span class="k" data-i18n="proto.checks">Comprobaciones del protocolo (ficticias)</span><p id="ccChecks">—</p></div>
+          <div class="block"><span class="k" data-i18n="proto.unc">Incertidumbres declaradas</span><p id="ccUncertainty">—</p></div>
+        </div>
+        <div>
+          <div class="big-val ok" id="ccRescue">OPERACIÓN EN ESPERA</div>
+          <p class="note" data-i18n="cc.rescueNote">El rover virtual se despliega automáticamente ante una alerta crítica confirmada y también puede lanzarse a mano en la pestaña del mapa.</p>
+          <div class="block ai-block">
+            <span class="k"><span data-i18n="ai.label">Evaluación de IA de alerta</span> <span class="ai-badge" id="aiSource">—</span></span>
+            <p id="aiText" class="ai-text">—</p>
+            <p class="note ai-note" data-i18n="ai.note">La IA solo explica y prioriza el incidente: la alerta la dispara siempre el motor determinista. Datos simulados, sin valor médico.</p>
+          </div>
+          <button id="btnReport" class="primary" data-i18n="btn.report">GENERAR INFORME PARA EL CENTRO DE CONTROL</button>
+          <pre id="reportOutput" class="report" hidden></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ROVER ================= -->
+  <section id="tab-rover" class="tab" hidden>
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="rover.h">MAPA LUNAR — RUTA DE RESCATE (SIMULADA)</h2><span class="ph-note" data-i18n="rover.note">cuadrícula 16×11 · 1 celda = 40 u.n.</span></div>
+      <!-- Three.js lunar scene will be injected by script.js -->
+      <div id="lunarScene" style="width:100%;height:400px;background:#050b16;"></div>
+      <div class="maphud">
+        <div class="maphud-row">
+          <span><span data-i18n="rover.dist">Distancia estimada:</span> <b id="roverDist" class="mono">—</b></span>
+          <span><span data-i18n="rover.state">Estado:</span> <b id="roverState" class="pill">EN ESPERA</b></span>
+        </div>
+        <div class="prog"><i id="roverProg" style="width:0%"></i></div>
+        <div class="maphud-actions">
+          <button id="btnRoverStart" class="primary" data-i18n="btn.roverStart">INICIAR RUTA DE RESCATE</button>
+          <button id="btnRoverStop" class="danger" disabled data-i18n="btn.roverStop">DETENER</button>
+          <button id="btnBlockDemo" class="ghost" data-i18n="btn.block">SIMULAR BLOQUEO TOTAL (DEMO)</button>
+          <button id="btnToggle3D" class="ghost" data-i18n="btn.toggle3D">TOGGLE 3D LUNAR</button>
+        </div>
+      </div>
+      <div class="legend">
+        <span class="lg"><i style="--c:#fbbf24"></i><span data-i18n="legend.astro">Astronauta</span></span>
+        <span class="lg"><i style="--c:#22d3ee"></i><span data-i18n="legend.rover">Rover RX-1</span></span>
+        <span class="lg"><i style="--c:#64748b"></i><span data-i18n="legend.obs">Obstáculo / crátero impracticable</span></span>
+        <span class="lg"><i style="--c:#22d3ee;opacity:.5"></i><span data-i18n="legend.route">Ruta calculada</span></span>
+      </div>
+      <p class="note" data-i18n="rover.hint">El rover es un personaje virtual de demostración: calcula la ruta con un algoritmo de búsqueda (BFS en 4 direcciones) sobre la cuadrícula y avanza celda a celda. No representa un robot real ni puede rescatar físicamente a nadie. Si no existe ruta disponible, el sistema lo indica y explica el motivo (los obstáculos aíslan la posición).</p>
+    </div>
+  </section>
+
+  <!-- ================= HISTORIAL Y PRUEBAS ================= -->
+  <section id="tab-history" class="tab" hidden>
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="hist.h">RESULTADOS DE PRUEBAS REPRODUCIBLES</h2><span class="ph-note" data-i18n="hist.note">medidos sobre las ejecuciones reales de este navegador</span></div>
+      <div class="metrics mono">
+        <div class="row"><span class="k" data-i18n="mtr.scenarios">Escenarios ejecutados</span><span id="mtrScenarios">0</span></div>
+        <div class="row"><span class="k" data-i18n="mtr.alerts">Alertas activadas</span><span id="mtrAlerts">0</span></div>
+        <div class="row"><span class="k" data-i18n="mtr.correct">Alertas correctas (tipo esperado)</span><span id="mtrCorrect">0</span></div>
+        <div class="row"><span class="k" data-i18n="mtr.false">Falsas alarmas</span><span id="mtrFalse">0</span></div>
+        <div class="row"><span class="k" data-i18n="mtr.missed">Incidentes no detectados</span><span id="mtrMissed">0</span></div>
+        <div class="row"><span class="k" data-i18n="mtr.avg">Tiempo medio de respuesta del software</span><span id="mtrAvg">—</span></div>
+        <div class="row"><span class="k" data-i18n="mtr.comm">Estado de comunicaciones</span><span id="mtrComm">ENLACE NOMINAL (SIMULADO)</span></div>
+        <div class="row"><span class="k" data-i18n="mtr.db">Eventos guardados en base de datos SQLite</span><span id="mtrDb">—</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="hlog.h">HISTORIAL COMPLETO DE EVENTOS</h2><span id="eventsCount" class="mono pill">0</span></div>
+      <div class="filters" id="historyFilters">
+        <button class="filter active" data-filter="all" data-i18n="f.all">Todos</button>
+        <button class="filter" data-filter="FISIO" data-i18n="f.fisio">Fisiología</button>
+        <button class="filter" data-filter="COMMS" data-i18n="f.comms">Comunicaciones</button>
+        <button class="filter" data-filter="ROVER" data-i18n="f.rover">Rover</button>
+        <button class="filter" data-filter="SYS" data-i18n="f.sys">Sistema</button>
+      </div>
+      <div id="historyList" class="history"></div>
+      <div class="actions">
+        <button id="btnExport" class="primary" data-i18n="btn.export">EXPORTAR INFORME (.txt)</button>
+        <button id="btnReset" class="danger" data-i18n="btn.resetSim">REINICIAR SIMULACIÓN</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ACERCA ================= -->
+  <section id="tab-about" class="tab" hidden>
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="about.h">ACERCA DEL PROYECTO</h2><span class="ph-note">SENTINEL RESCUE-X</span></div>
+      <div class="about">
+        <p class="lema" data-i18n="about.lema">«Cuando el astronauta no puede pedir ayuda, su traje debe saber cómo actuar»</p>
+
+        <h3 data-i18n="about.problem.h">Problema que se pretende abordar</h3>
+        <p data-i18n="about.problem.p">Durante una exploración lunar, un astronauta puede sufrir una emergencia (desmayo, caída, fuga del traje, CO₂ elevado, falla eléctrica) que le impida pedir ayuda, justo cuando la comunicación con la Tierra también puede fallar. En ese vacío de comunicación no hay forma de saber que está ocurriendo una emergencia ni de organizar un rescate a tiempo.</p>
+
+        <h3 data-i18n="about.solution.h">Solución propuesta</h3>
+        <p data-i18n="about.solution.p">Un traje con un módulo SENTINEL que supervisa indicadores con reglas deterministas, activa alertas automáticas ante patrones programados, comunica el incidente al Centro de Control si hay enlace y, si no lo hay, conserva todo localmente en una cola de retransmisión mientras lanza de forma autónoma la operación de rescate del rover más cercano.</p>
+
+        <h3 data-i18n="about.innov.h">Innovación</h3>
+        <p data-i18n-html="about.innov.p">La detección opera en el propio traje sin depender del enlace: detección → verificación cruzada de señales → confirmación, con incertidumbres declaradas en cada alerta (nunca diagnostica, solo indica <i>posible emergencia</i>). El rover recalcula rutas en el mapa de la misión y despliega la operación sin esperar al Centro de Control.</p>
+
+        <h3 data-i18n="about.tech.h">Tecnologías utilizadas</h3>
+        <ul>
+          <li data-i18n="about.tech.li1">Frontend: HTML, CSS y JavaScript puro; gráficos en canvas y mapa SVG con búsqueda de rutas BFS.</li>
+          <li data-i18n-html="about.tech.li2">Backend: Node.js (módulo HTTP nativo) con base de datos <b>SQLite</b> (better-sqlite3). Guarda eventos, incidentes y evaluaciones de IA.</li>
+          <li data-i18n-html="about.tech.li3">IA de alerta: <b>OpenAI opcional</b> llamada desde el servidor (clave en `.env`, nunca en el navegador) con <b>fallback heurístico local</b> que funciona sin clave ni Internet.</li>
+          <li data-i18n-html="about.tech.li4">Motor ML: clasificador <b>regresión softmax</b> entrenado en el navegador con datos sintéticos y con tus ejecuciones; pesos guardados en localStorage y (con servidor) en SQLite.</li>
+          <li data-i18n-html="about.tech.li5">App instalable (PWA): manifest + service worker para usarla como aplicación y en modo sin conexión, además del modo sin servidor.</li>
+          <li data-i18n="about.tech.li6">Sin servidor: la aplicación sigue funcionando abriendo `index.html`, con almacenamiento local del navegador y explicaciones locales.</li>
+        </ul>
+
+        <h3 data-i18n="about.db.h">Base de datos e IA de alerta</h3>
+        <p data-i18n-html="about.db.p1">Con el servidor (`node server.js`) la app usa <b>SQLite</b> con cuatro tablas: <code>events</code> (registro cronológico), <code>incidents</code> (incidente con condición, comprobaciones e incertidumbres), <code>ai_evaluations</code> (evaluación de la IA con fuente, modelo y puntaje de anomalía) y <code>ml_models</code> (versiones del modelo ML con exactitud y muestras). El frontend consulta y escribe por una API REST local.</p>
+        <p data-i18n-html="about.db.p2">La <b>IA de alerta</b> se ejecuta al confirmarse un incidente y devuelve un resumen en cuatro partes: resumen, indicadores alterados, incertidumbres y comprobaciones recomendadas. Con `OPENAI_API_KEY` configurada en `.env`, el servidor llama a OpenAI; si no hay clave, error o límite de cuota, responde la <b>IA heurística local</b> (reglas ponderadas, sin modelo entrenado). En ningún caso la IA decide si hay alerta: eso lo hace el motor determinista del traje simulado, y la IA solo redacta/prioriza la explicación.</p>
+
+        <h3 data-i18n="about.lim.h">Límites y riesgos</h3>
+        <ul>
+          <li data-i18n="about.lim.li1">Es un prototipo educativo. No usa sensores físicos ni datos reales de astronautas.</li>
+          <li data-i18n="about.lim.li2">Las alertas responden a umbrales fijos programados; no hay entrenamiento con datos de misiones, por lo que no se afirma ninguna precisión clínica.</li>
+          <li data-i18n-html="about.lim.li3">La inmovilidad o una FC baja no confirman un desmayo ni una caída: el sistema sólo declara <i>posible emergencia</i> y siempre deja constancia de sus incertidumbres.</li>
+          <li data-i18n="about.lim.li4">La IA (OpenAI, heurística o ML) es un apoyo narrativo: no controla el traje, no suprime alertas y no emite diagnósticos. Requiere Internet y créditos de API solo si se activa OpenAI; sin ellos la demo sigue completa.</li>
+          <li data-i18n="about.lim.li5">La clave de OpenAI vive únicamente en el servidor (`.env`) y el servidor escucha en `127.0.0.1` por defecto. No se debe exponer esta demo a Internet sin autenticación.</li>
+        </ul>
+
+        <h3 data-i18n="about.cmp.h">Qué funciona en el prototipo vs. qué exigiría un traje real</h3>
+        <table class="cmp">
+          <tr><th data-i18n="about.cmp.th1">Prototipo (funciona hoy)</th><th data-i18n="about.cmp.th2">Traje real (a futuro)</th></tr>
+          <tr><td data-i18n="about.cmp.r1a">Sensores simulados generados por software</td><td data-i18n="about.cmp.r1b">Bio-monitores certificados en contacto con el cuerpo y calibrados</td></tr>
+          <tr><td data-i18n="about.cmp.r2a">Reglas deterministas con umbrales fijos + ML opcional en navegador</td><td data-i18n="about.cmp.r2b">Modelos validados clínicamente con datos de misiones</td></tr>
+          <tr><td data-i18n="about.cmp.r3a">Rover virtual animado en un mapa ficticio</td><td data-i18n="about.cmp.r3b">Robótica autónoma certificada, navegable y segura</td></tr>
+          <tr><td data-i18n="about.cmp.r4a">Comunicación simulada con cola local</td><td data-i18n="about.cmp.r4b">Enlaces reales DSN/orbitales con cifrado y latencia</td></tr>
+          <tr><td data-i18n="about.cmp.r5a">IA de alerta opcional (OpenAI en servidor), heurística local o ML del navegador</td><td data-i18n="about.cmp.r5b">Modelos clínicos validados con certificación y supervisión humana</td></tr>
+          <tr><td data-i18n="about.cmp.r6a">Alertas en pantalla y sonido del navegador</td><td data-i18n="about.cmp.r6b">Alertadores integrados al traje, redundantes y aprobados por la agencia</td></tr>
+        </table>
+
+        <h3 data-i18n="about.res.h">Resultados de las pruebas</h3>
+        <p data-i18n-html="about.res.p">Se calculan en vivo a partir de las ejecuciones reales del prototipo, sin porcentajes inventados. Véalos en la pestaña <b>Historial y pruebas</b>: escenarios ejecutados, alertas activadas, alertas correctas, falsas alarmas, incidentes no detectados y tiempo medio de respuesta. El motor ML informa su exactitud de validación en su panel.</p>
+
+        <h3 data-i18n="about.app.h">Posibles aplicaciones futuras</h3>
+        <p data-i18n="about.app.p">Monitoreo de expediciones polares o mineras con módulos equivalentes, fabricantes de EVA, entrenamiento de centros de control y ejercicios de contingencia, y como plataforma para estudiar el diseño de protocolos de rescate en exploración planetaria.</p>
+
+        <h3 data-i18n="about.n.h">Aviso</h3>
+        <p data-i18n-html="about.n.p">Proyecto educativo para la clase y preparación del NASA Space Apps Challenge 2026 como ejercicio de aprendizaje. <b>No está afiliado a NASA ni respaldado, probado o aprobado por la agencia.</b> No existen conexiones reales con ningún centro de control.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <span data-i18n="foot.left">SENTINEL RESCUE-X · prototipo educativo · todos los datos son simulados</span>
+  <span data-i18n="foot.right">sin conexión real con NASA ni ninguna agencia</span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+<script src="threejs/scene.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

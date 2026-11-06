@@ -1,0 +1,22 @@
+{
+  "name": "sentinel-rescue-x",
+  "version": "1.1.0",
+  "description": "SENTINEL RESCUE-X — simulación de rescate de astronautas con base de datos SQLite e IA de alerta (prototipo educativo).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --check script.js && node --check i18n.js && node --check sw.js && node --check server.js && node --check scripts/gen-icon.js"
+  },
+  "keywords": [
+    "nasa-space-apps",
+    "simulacion",
+    "sqlite",
+    "openai"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "three": "^0.186.1"
+  }
+}
