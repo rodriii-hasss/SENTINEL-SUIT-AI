@@ -17,22 +17,36 @@
   const rnd = (a, b) => a + Math.random() * (b - a);
   const nowIso = () => new Date().toISOString();
 
-  const BASE = { hr: 72, spo2: 97.8, press: 101.3, co2: 0.42, batt: 86, temp: 36.8, activity: 22, orient: 8 };
+  const BASE = { hr: 72, spo2: 97.8, press: 101.3, co2: 0.42, batt: 86, temp: 36.8, activity: 22, orient: 8, accel: 1 };
   const ASTRONAUT = 'ASTR-02 · HALLEY';
+  const UNIT = 'SENTINEL-01';
   const MISSION = 'ARTEMIS-LUNAR / EVA-04 (SIM)';
   const LOCATION = 'Mare Crisium · Sector E4 (SIM)';
 
   const SCENARIO_EXPECT = {
     normal: null, collapse: 'collapse', fall: 'fall', physio: 'physio',
-    pressure: 'pressure', co2: 'co2', battery: 'battery', comm: null
+    pressure: 'pressure', co2: 'co2', battery: 'battery', comm: null,
+    sensorDrop: null, badReading: null
   };
   const SCENARIO_LOG = {
     normal: 'log.sc.normal', collapse: 'log.sc.collapse', fall: 'log.sc.fall',
     physio: 'log.sc.physio', pressure: 'log.sc.pressure', co2: 'log.sc.co2',
-    comm: 'log.sc.comm', battery: 'log.sc.battery'
+    comm: 'log.sc.comm', battery: 'log.sc.battery',
+    sensorDrop: 'log.sc.sensorDrop', badReading: 'log.sc.badReading'
   };
   const ML_CLASSES = ['normal', 'collapse', 'fall', 'physio', 'pressure', 'co2', 'battery'];
   const ML_FEATURES = 8;
+  const SENSOR_KEYS = ['hr', 'spo2', 'press', 'co2', 'batt', 'temp', 'activity', 'orient'];
+  const SENSOR_LABEL = {
+    hr: 'FC', spo2: 'SpO₂', press: 'P', co2: 'CO₂', batt: 'BAT',
+    temp: 'T', activity: 'ACT', orient: 'ORI'
+  };
+  const RULE_SENSOR = {
+    hrLow: 'hr', hrHigh: 'hr', spo2Low: 'spo2', pressLow: 'press', co2High: 'co2',
+    battLow: 'batt', still: 'activity', tilt: 'orient', tempBad: 'temp'
+  };
+  const TEST_SCENARIOS = ['normal', 'collapse', 'fall', 'physio', 'pressure', 'co2', 'battery', 'comm', 'sensorDrop', 'badReading'];
+  const STORAGE_KEY = 'sentinel-rescue-x-v1';
 
   const GRID = {
     cols: 16,
@@ -81,7 +95,12 @@
       accuracy: null,
       buffer: [],
       auto: true,
-      trained: false
+      trained: false,
+      history: [],
+      confusion: null,
+      classCounts: {},
+      errors: [],
+      valSize: 0
     };
   }
 
@@ -92,32 +111,48 @@
       status: 'wait',
       route: [],
       index: 0,
-      auto: false
+      auto: false,
+      startedAt: null,
+      endedAt: null,
+      result: null,
+      totalDist: 0,
+      events: []
     };
   }
 
   function defaultState() {
     return {
-      version: 1,
+      version: 2,
       createdAt: Date.now(),
       missionStart: Date.now(),
       sound: true,
       scenario: 'normal',
       scenarioStart: Date.now(),
       expected: null,
-      detect: { type: null, count: 0, logged: false },
+      detect: { type: null, count: 0, logged: false, stage: null, startedAt: null, responded: false },
       active: null,
       ai: null,
       commOk: true,
+      commLostAt: null,
       queue: [],
       history: [],
       nextEventId: 1,
-      metrics: { scenarios: 0, alerts: 0, correct: 0, falseAlarms: 0, missed: 0, latencies: [] },
+      metrics: {
+        scenarios: 0, alerts: 0, correct: 0, falseAlarms: 0, missed: 0, latencies: [],
+        detectionTimes: [], recoveryTimes: [], txTotal: 0, txSent: 0, lastRecoveryMs: null
+      },
       ml: defaultMl(),
       rover: defaultRover(),
       tel: Object.assign({}, BASE),
       telHistory: [],
-      server: { online: false, ai: 'local-heuristic', model: 'heuristica-ponderada-v1', dbEvents: null, checked: 0 }
+      quality: { hr: 98, spo2: 98, press: 98, co2: 98, batt: 98, temp: 98, activity: 98, orient: 98 },
+      lastInvalid: '',
+      testRuns: [],
+      currentTest: null,
+      testSeq: 1,
+      suiteRunning: false,
+      integrity: { checkedAt: null, ok: null, valid: null },
+      server: { online: false, ai: 'local-heuristic', model: 'heuristica-ponderada-v1', dbEvents: null, tested: 0, checked: 0 }
     };
   }
 
@@ -130,19 +165,33 @@
       const parsed = JSON.parse(raw);
       const merged = Object.assign(def, parsed);
       merged.metrics = Object.assign(def.metrics, parsed.metrics || {});
+      ['latencies', 'detectionTimes', 'recoveryTimes'].forEach(function (k) {
+        if (!Array.isArray(merged.metrics[k])) merged.metrics[k] = [];
+      });
       merged.ml = Object.assign(defaultMl(), parsed.ml || {});
       if (!Array.isArray(merged.ml.buffer)) merged.ml.buffer = [];
+      if (!Array.isArray(merged.ml.history)) merged.ml.history = [];
+      if (!Array.isArray(merged.ml.errors)) merged.ml.errors = [];
+      if (!merged.ml.classCounts || typeof merged.ml.classCounts !== 'object') merged.ml.classCounts = {};
+      if (!Array.isArray(merged.ml.confusion)) merged.ml.confusion = null;
       merged.rover = Object.assign(defaultRover(), parsed.rover || {});
       if (!Array.isArray(merged.rover.obstacles) || !merged.rover.obstacles.length) merged.rover.obstacles = defaultRover().obstacles;
+      if (!Array.isArray(merged.rover.events)) merged.rover.events = [];
       if (!Array.isArray(merged.queue)) merged.queue = [];
       if (!Array.isArray(merged.history)) merged.history = [];
       if (!Array.isArray(merged.telHistory)) merged.telHistory = [];
+      if (!Array.isArray(merged.testRuns)) merged.testRuns = [];
       merged.tel = Object.assign({}, BASE, parsed.tel || {});
+      merged.quality = Object.assign(def.quality, parsed.quality || {});
+      merged.detect = Object.assign(def.detect, parsed.detect || {});
+      merged.integrity = Object.assign(def.integrity, parsed.integrity || {});
       merged.server = Object.assign(def.server, parsed.server || {});
       merged.rover.status = 'wait';
       merged.rover.route = [];
       merged.rover.index = 0;
       merged.rover.auto = false;
+      merged.suiteRunning = false;
+      merged.currentTest = null;
       if (!merged.nextEventId) merged.nextEventId = merged.history.length + 1;
       return merged;
     } catch (e) {
@@ -196,38 +245,73 @@
     return fmtClock(missionSeconds());
   }
 
+  function signalValid(name) {
+    const q = state && state.quality ? state.quality[name] : null;
+    return q == null || q >= 50;
+  }
+
+  function invalidSensors() {
+    if (!state || !state.quality) return [];
+    return SENSOR_KEYS.filter(function (k) { return state.quality[k] < 50; });
+  }
+
+  function overallQuality() {
+    if (!state || !state.quality) return 100;
+    let sum = 0;
+    SENSOR_KEYS.forEach(function (k) { sum += Number(state.quality[k]) || 0; });
+    return Math.round(sum / SENSOR_KEYS.length);
+  }
+
+  function validSensorCount() {
+    return SENSOR_KEYS.filter(function (k) { return signalValid(k); }).length;
+  }
+
+  function updateQuality() {
+    const t = Date.now();
+    const q = {};
+    SENSOR_KEYS.forEach(function (k, i) {
+      q[k] = clamp(98 + Math.sin(t / 1700 + i * 1.7) * 1.2 + rnd(-0.8, 0.8), 88, 100);
+    });
+    if (state.scenario === 'sensorDrop') {
+      q.hr = 0;
+      q.spo2 = 12;
+    }
+    if (state.scenario === 'badReading') {
+      q.hr = 32;
+      q.temp = 46;
+    }
+    state.quality = q;
+  }
+
   function severityLevelFor(type, tel) {
     if (type === 'collapse' || type === 'fall' || type === 'co2' || type === 'battery') return 'crit';
-    if (type === 'pressure' && tel.press <= 84) return 'crit';
-    let score = 0;
-    if (tel.hr <= 52) score += clamp((52 - tel.hr) * 2.2, 6, 45);
-    else if (tel.hr >= 128) score += clamp((tel.hr - 128) * 1.6, 6, 40);
-    if (tel.spo2 <= 93) score += clamp((93 - tel.spo2) * 3, 4, 25);
-    if (tel.press <= 84) score += clamp((84 - tel.press) * 1.6, 4, 30);
-    if (tel.co2 >= 1.1) score += clamp((tel.co2 - 1.1) * 26, 4, 30);
-    if (tel.batt <= 25) score += clamp((25 - tel.batt) * 2, 4, 30);
-    if (tel.activity <= 6) score += clamp(18 - tel.activity, 8, 18);
-    if (Math.abs(tel.orient - BASE.orient) >= 58) score += 20;
-    if (tel.temp <= 35.8 || tel.temp >= 38.2) score += 10;
-    return clamp(Math.round(score), 0, 100) >= 65 ? 'crit' : 'warn';
+    if (type === 'pressure' && signalValid('press') && tel.press <= 84) return 'crit';
+    let score = anomalyScore(tel);
+    return score >= 65 ? 'crit' : 'warn';
   }
 
   function anomalyScore(tel) {
     let score = 0;
-    if (tel.hr <= 52) score += clamp((52 - tel.hr) * 2.2, 6, 45);
-    else if (tel.hr >= 128) score += clamp((tel.hr - 128) * 1.6, 6, 40);
-    if (tel.spo2 <= 93) score += clamp((93 - tel.spo2) * 3, 4, 25);
-    if (tel.press <= 84) score += clamp((84 - tel.press) * 1.6, 4, 30);
-    if (tel.co2 >= 1.1) score += clamp((tel.co2 - 1.1) * 26, 4, 30);
-    if (tel.batt <= 25) score += clamp((25 - tel.batt) * 2, 4, 30);
-    if (tel.activity <= 6) score += clamp(18 - tel.activity, 8, 18);
-    if (Math.abs(tel.orient - BASE.orient) >= 58) score += 20;
-    if (tel.temp <= 35.8 || tel.temp >= 38.2) score += 10;
+    if (signalValid('hr')) {
+      if (tel.hr <= 52) score += clamp((52 - tel.hr) * 2.2, 6, 45);
+      else if (tel.hr >= 128) score += clamp((tel.hr - 128) * 1.6, 6, 40);
+    }
+    if (signalValid('spo2') && tel.spo2 <= 93) score += clamp((93 - tel.spo2) * 3, 4, 25);
+    if (signalValid('press') && tel.press <= 84) score += clamp((84 - tel.press) * 1.6, 4, 30);
+    if (signalValid('co2') && tel.co2 >= 1.1) score += clamp((tel.co2 - 1.1) * 26, 4, 30);
+    if (signalValid('batt') && tel.batt <= 25) score += clamp((25 - tel.batt) * 2, 4, 30);
+    if (signalValid('activity') && signalValid('orient') && tel.activity <= 6) score += clamp(18 - tel.activity, 8, 18);
+    if (signalValid('orient') && Math.abs(tel.orient - BASE.orient) >= 58) score += 20;
+    if (signalValid('temp') && (tel.temp <= 35.8 || tel.temp >= 38.2)) score += 10;
     return Math.round(clamp(score, 0, 100));
   }
 
   function activeRuleList(tel) {
-    return RULES.filter((r) => r.test(tel)).map((r) => r.key);
+    return RULES.filter(function (r) { return signalValid(RULE_SENSOR[r.key]) && r.test(tel); }).map((r) => r.key);
+  }
+
+  function invalidRuleList(tel) {
+    return RULES.filter(function (r) { return !signalValid(RULE_SENSOR[r.key]) && r.test(tel); }).map((r) => r.key);
   }
 
   function classifyRules(list) {
@@ -307,6 +391,13 @@
     tel.temp += (target.temp - tel.temp) * 0.3 + rnd(-0.03, 0.03);
     tel.activity += (target.activity - tel.activity) * 0.5 + rnd(-1.1, 1.1);
     tel.orient += (target.orient - tel.orient) * 0.42 + rnd(-0.6, 0.6);
+    tel.accel = Number.isFinite(tel.accel) ? tel.accel : 1;
+    tel.accel += (telemetryAccelTarget(elapsed) - tel.accel) * 0.34 + rnd(-0.05, 0.05);
+
+    if (state.scenario === 'badReading' && elapsed > 1) {
+      if (Math.sin(elapsed * 2.7) > 0.2) tel.hr += rnd(14, 32);
+      if (Math.sin(elapsed * 1.3) > 0.5) tel.temp += rnd(0.8, 1.6);
+    }
 
     tel.hr = clamp(tel.hr, 28, 180);
     tel.spo2 = clamp(tel.spo2, 78, 100);
@@ -316,9 +407,23 @@
     tel.temp = clamp(tel.temp, 34.5, 41);
     tel.activity = clamp(tel.activity, 0, 42);
     tel.orient = clamp(tel.orient, 0, 180);
+    tel.accel = clamp(tel.accel, 0, 8);
+
+    updateQuality();
 
     state.telHistory.push({ hr: tel.hr, spo2: tel.spo2, press: tel.press, co2: tel.co2, batt: tel.batt });
     if (state.telHistory.length > CHART_POINTS) state.telHistory.shift();
+  }
+
+  function telemetryAccelTarget(elapsed) {
+    switch (state.scenario) {
+      case 'fall': return elapsed < 2.2 ? 3.8 : 0.7;
+      case 'physio': return 1.5 + Math.abs(Math.sin(elapsed * 1.7)) * 0.7;
+      case 'collapse': return 0.9;
+      case 'sensorDrop':
+      case 'badReading': return 1;
+      default: return 0.9 + Math.abs(Math.sin(elapsed * 0.6)) * 0.35;
+    }
   }
 
   function seedTelemetry() {
@@ -349,41 +454,131 @@
   }
 
   function evaluateDetection() {
+    const invalid = invalidSensors();
+    const invalidKey = invalid.slice().sort().join(',');
+    if (invalidKey !== state.lastInvalid) {
+      invalid.forEach(function (k) {
+        log(t('log.sensorInvalid', [SENSOR_LABEL[k], Math.round(state.quality[k])]), 'warn', 'SYS');
+      });
+      state.lastInvalid = invalidKey;
+    }
+
     const list = activeRuleList(state.tel);
     const type = classifyRules(list);
     if (!type) {
       if (state.detect.count || state.detect.type) {
         if (state.detect.logged) log(t('log.detectOK', [ruleLabels(list, state.tel) || '—']), 'info', 'SYS');
-        state.detect = { type: null, count: 0, logged: false };
+        state.detect = { type: null, count: 0, logged: false, stage: null, startedAt: null, responded: false };
       }
+      renderDetectionStage();
       return;
     }
-    if (state.active && state.active.type === type) return;
+    if (state.active && state.active.type === type) {
+      state.detect.stage = 'logging';
+      renderDetectionStage();
+      return;
+    }
     if (state.detect.type !== type) {
-      state.detect = { type: type, count: 0, logged: false };
+      state.detect = { type: type, count: 0, logged: false, stage: 'detection', startedAt: Date.now(), responded: false };
     }
     state.detect.count++;
     if (!state.detect.logged) {
       state.detect.logged = true;
       log(t('log.detect', [ruleLabels(list, state.tel), DETECT_CYCLES]), 'warn', type === 'fall' || type === 'collapse' ? 'FISIO' : 'SYS');
     }
+    state.detect.stage = state.detect.count >= DETECT_CYCLES ? 'escalation' : 'verification';
     if (state.detect.count >= DETECT_CYCLES && (!state.active || state.active.type !== type)) {
       confirmAlert(type);
     }
+    renderDetectionStage();
+  }
+
+  function renderDetectionStage() {
+    const steps = ['detStep1', 'detStep2', 'detStep3', 'detStep4'];
+    const d = state.detect || {};
+    let current = null;
+    if (state.active) current = d.stage === 'logging' || !d.stage ? 'logging' : d.stage;
+    else if (d.stage) current = d.stage;
+    const order = { detection: 1, verification: 2, escalation: 3, logging: 4 };
+    const at = current ? order[current] : 0;
+    steps.forEach(function (id, i) {
+      const el = $(id);
+      if (!el) return;
+      el.classList.remove('active', 'done', 'crit');
+      if (at && i + 1 < at) el.classList.add('done');
+      if (at && i + 1 === at) {
+        el.classList.add('active');
+        if (current === 'escalation' || current === 'logging') el.classList.add('crit');
+      }
+    });
+    const prog = $('detProgress');
+    if (prog) {
+      let pct = 0;
+      if (current === 'detection') pct = 10;
+      else if (current === 'verification') pct = 30 + Math.min(60, (d.count || 0) * 20);
+      else if (current === 'escalation' || current === 'logging') pct = 100;
+      prog.style.width = pct + '%';
+    }
+    const txt = $('detStatus');
+    if (!txt) return;
+    if (state.active && d.stage === 'logging') {
+      txt.textContent = t('det.confirmed', [state.active.label]);
+      return;
+    }
+    if (d.responded) {
+      txt.textContent = t('det.responded');
+      return;
+    }
+    if (!current) {
+      txt.textContent = t('det.wait');
+      return;
+    }
+    if (current === 'escalation') {
+      txt.textContent = t('det.escalating', [t('type.' + d.type)]);
+      return;
+    }
+    txt.textContent = t('det.active', [t('type.' + (d.type || 'combined')), Math.min(d.count || 0, DETECT_CYCLES), DETECT_CYCLES]);
+  }
+
+  function simulateAstronautResponse() {
+    if (!state.detect || !state.detect.type) {
+      log(t('log.respondNone'), 'info', 'SYS');
+      return;
+    }
+    log(t('log.responded'), 'info', 'FISIO');
+    state.detect = { type: null, count: 0, logged: false, stage: null, startedAt: null, responded: true };
+    if (state.currentTest) state.currentTest.answered = true;
+    hideBanner();
+    renderDetectionStage();
+    renderStats();
+    save();
   }
 
   function noteList(tel) {
     const notes = [];
-    if (tel.hr <= 52) notes.push(t('note.hrLow', [tel.hr.toFixed(0)]));
-    else if (tel.hr >= 128) notes.push(t('note.hrHigh', [tel.hr.toFixed(0)]));
-    if (tel.spo2 <= 93) notes.push(t('note.spo2', [tel.spo2.toFixed(1)]));
-    if (tel.press <= 84) notes.push(t('note.press', [tel.press.toFixed(1)]));
-    if (tel.co2 >= 1.1) notes.push(t('note.co2', [tel.co2.toFixed(2)]));
-    if (tel.batt <= 25) notes.push(t('note.batt', [tel.batt.toFixed(0)]));
-    if (tel.activity <= 6) notes.push(t('note.act', [tel.activity.toFixed(0)]));
-    if (Math.abs(tel.orient - BASE.orient) >= 58) notes.push(t('note.orient', [Math.abs(tel.orient - BASE.orient).toFixed(0)]));
-    if (tel.temp <= 35.8 || tel.temp >= 38.2) notes.push(t('note.temp', [tel.temp.toFixed(1)]));
+    if (signalValid('hr')) {
+      if (tel.hr <= 52) notes.push(t('note.hrLow', [tel.hr.toFixed(0)]));
+      else if (tel.hr >= 128) notes.push(t('note.hrHigh', [tel.hr.toFixed(0)]));
+    }
+    if (signalValid('spo2') && tel.spo2 <= 93) notes.push(t('note.spo2', [tel.spo2.toFixed(1)]));
+    if (signalValid('press') && tel.press <= 84) notes.push(t('note.press', [tel.press.toFixed(1)]));
+    if (signalValid('co2') && tel.co2 >= 1.1) notes.push(t('note.co2', [tel.co2.toFixed(2)]));
+    if (signalValid('batt') && tel.batt <= 25) notes.push(t('note.batt', [tel.batt.toFixed(0)]));
+    if (signalValid('activity') && tel.activity <= 6) notes.push(t('note.act', [tel.activity.toFixed(0)]));
+    if (signalValid('orient') && Math.abs(tel.orient - BASE.orient) >= 58) notes.push(t('note.orient', [Math.abs(tel.orient - BASE.orient).toFixed(0)]));
+    if (signalValid('temp') && (tel.temp <= 35.8 || tel.temp >= 38.2)) notes.push(t('note.temp', [tel.temp.toFixed(1)]));
+    invalidSensors().forEach(function (k) {
+      notes.push(t('note.sensorInvalid', [SENSOR_LABEL[k], Math.round(state.quality[k])]));
+    });
     return notes;
+  }
+
+  function makeIncidentId() {
+    const d = new Date();
+    const pad = function (n) { return String(n).padStart(2, '0'); };
+    const stamp = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' +
+      pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+    return 'INC-' + stamp + '-' + String(Math.floor(rnd(1000, 9999)));
   }
 
   function confirmAlert(type) {
@@ -396,7 +591,9 @@
     const uncertainty = t('kb.' + type + '.uncertainty');
     const trigger = t('kb.' + type + '.trigger');
     const payload = formatIndicators(tel);
+    const detectMs = state.detect && state.detect.startedAt ? Math.max(0, Math.round(Date.now() - state.detect.startedAt)) : null;
     const active = {
+      incidentId: makeIncidentId(),
       type: type,
       label: label,
       level: level,
@@ -409,11 +606,16 @@
       payload: payload,
       delivery: state.commOk ? 'sent' : 'queued',
       score: anomalyScore(tel),
-      ai: null
+      ai: null,
+      persisted: false,
+      serverId: null,
+      detectMs: detectMs
     };
     const wasActive = state.active;
     state.active = active;
     state.metrics.alerts++;
+    state.metrics.txTotal++;
+    if (detectMs != null) state.metrics.detectionTimes.push(detectMs);
     const expected = state.expected || SCENARIO_EXPECT[state.scenario];
     const latency = Math.max(0, Math.round(performance.now() - (state.scenarioStartWall || state.scenarioStart || Date.now())));
     log(t('log.alert', [label, ruleLabels(activeRuleList(tel), tel)]), level === 'crit' ? 'crit' : 'warn', type === 'comm' ? 'COMMS' : 'FISIO');
@@ -434,17 +636,24 @@
     if (state.commOk) {
       log(t('log.tx', [label]), 'info', 'COMMS', t('st.sent'));
       active.delivery = 'sent';
+      state.metrics.txSent++;
     } else {
-      addQueue(label + ' — ' + mt);
+      addQueue(label, active.incidentId);
       log(t('log.queued', [label]), 'warn', 'COMMS', t('st.queued'));
       active.delivery = 'queued';
     }
+    if (state.currentTest) {
+      state.currentTest.alerts++;
+      state.currentTest.detectedType = type;
+      if (state.currentTest.detectionMs == null) state.currentTest.detectionMs = detectMs;
+      state.currentTest.transmitted += state.commOk ? 1 : 0;
+      state.currentTest.pending += state.commOk ? 0 : 1;
+      if (expected === type) state.currentTest.correct++;
+      else state.currentTest.falseAlarms++;
+    }
     playAlertSound(level);
 
-    if (state.detect.logged) {
-      state.detect.logged = false;
-      state.detect.count = 0;
-    }
+    state.detect = Object.assign({}, state.detect, { logged: false, count: 0, stage: 'logging' });
     state.expected = expected;
     state.ai = null;
     renderActive();
@@ -482,8 +691,16 @@
     ].join(' · ');
   }
 
-  function addQueue(text) {
-    state.queue.push({ id: state.nextEventId++, mt: currentMissionTime(), wall: nowIso(), text: text, status: 'queued' });
+  function addQueue(text, incidentId) {
+    state.queue.push({
+      id: state.nextEventId++,
+      mt: currentMissionTime(),
+      wall: nowIso(),
+      text: text,
+      status: 'queued',
+      incidentId: incidentId || null,
+      attempts: 0
+    });
     if (state.queue.length > 100) state.queue.shift();
     renderQueue();
     save();
@@ -493,9 +710,21 @@
     state.commOk = true;
     log(t('log.restoreAck'), 'info', 'COMMS');
     const pending = state.queue.filter((q) => q.status !== 'sent');
-    pending.forEach(function (q) { q.status = 'sent'; });
+    pending.forEach(function (q) {
+      q.status = 'sent';
+      q.attempts = (q.attempts || 0) + 1;
+    });
+    const recoveryMs = state.commLostAt ? Math.max(0, Date.now() - state.commLostAt) : null;
+    state.commLostAt = null;
+    if (recoveryMs != null) {
+      state.metrics.recoveryTimes.push(recoveryMs);
+      state.metrics.lastRecoveryMs = recoveryMs;
+      if (state.currentTest && state.currentTest.recoveryMs == null) state.currentTest.recoveryMs = recoveryMs;
+    }
+    state.metrics.txSent += pending.length;
     if (state.active && state.active.delivery === 'queued') state.active.delivery = 'resync';
     log(pending.length ? t('log.flush', [pending.length]) : t('log.flushNone'), 'info', 'COMMS');
+    if (recoveryMs != null) log(t('log.recovery', [recoveryMs, pending.length]), 'info', 'COMMS');
     renderStatic();
     renderComm();
     renderActive();
@@ -505,12 +734,14 @@
 
   function setScenario(name) {
     if (!SCENARIO_EXPECT.hasOwnProperty(name)) return;
+    finalizeTestRun();
     const previous = state.scenario;
     state.scenario = name;
     state.scenarioStart = Date.now();
     state.scenarioStartWall = performance.now();
     state.expected = SCENARIO_EXPECT[name];
-    state.detect = { type: null, count: 0, logged: false };
+    state.detect = { type: null, count: 0, logged: false, stage: null, startedAt: null, responded: false };
+    state.lastInvalid = '';
     state.active = null;
     state.ai = null;
     state.metrics.scenarios++;
@@ -518,28 +749,32 @@
     if (missedTimer) { clearTimeout(missedTimer); missedTimer = null; }
 
     if (name === 'normal') {
-      if (!state.commOk) {
-        const pending = state.queue.filter(function (q) { return q.status !== 'sent'; });
-        pending.forEach(function (q) { q.status = 'sent'; });
-        if (pending.length) log(t('log.flush', [pending.length]), 'info', 'COMMS');
-      }
+      if (!state.commOk) restoreComm();
       state.commOk = true;
+      state.commLostAt = null;
       state.tel = Object.assign({}, BASE);
       state.rover.status = 'wait';
       state.rover.route = [];
       state.rover.index = 0;
       state.rover.auto = false;
+      state.rover.startedAt = null;
+      state.rover.endedAt = null;
+      state.rover.result = null;
+      state.rover.totalDist = 0;
       if (roverTimer) { clearInterval(roverTimer); roverTimer = null; }
       if (previous !== 'normal') log(t('log.roverCancel'), 'info', 'ROVER');
     }
     if (name === 'comm') {
       state.commOk = false;
+      state.commLostAt = Date.now();
       log(t('log.sc.comm'), 'warn', 'COMMS');
-      addQueue(currentMissionTime() + ' · ' + t('log.sc.comm'));
+      addQueue(t('log.sc.comm'));
     } else {
       log(t('log.scenario', [t('sc.' + name + '.b')]), name === 'normal' ? 'info' : 'warn', name === 'comm' ? 'COMMS' : 'SYS');
     }
     if (name !== 'comm') log(t(SCENARIO_LOG[name]), name === 'normal' ? 'info' : 'warn', 'SYS');
+
+    beginTestRun(name);
 
     if (state.expected) {
       missedTimer = setTimeout(function () {
@@ -547,6 +782,10 @@
         if (state.scenario !== name) return;
         if (state.active && state.active.type === state.expected) return;
         state.metrics.missed++;
+        if (state.currentTest) {
+          state.currentTest.missed = 1;
+          state.currentTest.result = 'missed';
+        }
         log(t('log.missed', [t('sc.' + name + '.b')]), 'warn', 'SYS');
         renderStats();
         save();

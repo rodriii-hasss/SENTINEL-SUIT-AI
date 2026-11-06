@@ -728,3 +728,205 @@ button { font: inherit; }
     padding-bottom: max(0px, env(safe-area-inset-bottom));
   }
 }
+
+/* ================= SENTINEL SUIT AI — mejoras ================= */
+
+/* Arquitectura en cuatro capas */
+.layers { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.layer {
+  position: relative;
+  background: var(--panel2);
+  border: 1px solid var(--line2);
+  border-left: 3px solid var(--cyan);
+  border-radius: 10px;
+  padding: 12px 14px 12px 48px;
+  display: grid;
+  gap: 4px;
+  transition: border-color .3s;
+}
+.layer-num {
+  position: absolute;
+  left: 11px;
+  top: 10px;
+  font-family: var(--font-h);
+  font-size: 1rem;
+  color: rgba(0, 212, 255, .45);
+}
+.layer b { font-family: var(--font-h); font-size: .58rem; letter-spacing: 1px; text-transform: uppercase; color: #9fd9ff; }
+.layer small { font-size: .62rem; color: var(--muted); line-height: 1.45; }
+.layer.ok { border-left-color: var(--ok); }
+.layer.warn { border-left-color: var(--amber); }
+.layer.bad { border-left-color: var(--red); }
+
+/* Calidad de señal */
+.quality-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 8px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line2);
+}
+.quality-head .k { color: var(--muted); font-size: .6rem; text-transform: uppercase; letter-spacing: 1px; }
+.quality-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.qb {
+  font-family: var(--font-m);
+  font-size: .56rem;
+  border: 1px solid var(--line2);
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: var(--muted);
+  background: rgba(8, 17, 32, .6);
+}
+.qb b { color: var(--ok); }
+.qb.warn { border-color: rgba(255, 180, 0, .5); color: var(--amber); }
+.qb.warn b { color: var(--amber); }
+.qb.off { border-color: rgba(125, 144, 171, .4); color: #64748b; background: rgba(100, 116, 139, .1); }
+.qb.off b { color: #64748b; }
+.qb.crit { border-color: rgba(255, 61, 94, .5); }
+
+.ind.stale { opacity: .55; border-color: rgba(100, 116, 139, .45); }
+.ind.stale .num { color: #64748b; }
+.ind.stale .ind-dot { background: #64748b; box-shadow: none; animation: none; }
+.ind.stale .trend { color: #64748b; }
+
+/* Analítica ML */
+.ml-analytics { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 12px; }
+.mini-panel { background: var(--panel2); border: 1px solid var(--line2); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.mini-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.mini-head span { font-family: var(--font-h); font-size: .56rem; letter-spacing: 1px; color: #9fd9ff; text-transform: uppercase; }
+.mini-head small { font-size: .52rem; color: var(--muted); text-align: right; }
+.matrix { overflow-x: auto; }
+.matrix table { border-collapse: collapse; font-family: var(--font-m); font-size: .5rem; width: 100%; }
+.matrix th, .matrix td { border: 1px solid var(--line2); padding: 3px 4px; text-align: center; }
+.matrix th { color: var(--muted); font-weight: 400; }
+.matrix td { color: #9db4cc; }
+.matrix td.hit { color: var(--ok); background: rgba(0, 230, 118, .08); }
+.matrix td.miss { color: var(--red); background: rgba(255, 61, 94, .08); }
+.matrix .mx-corner { color: transparent; }
+.mini-list.mono { font-size: .6rem; }
+.ml-hist-row { display: flex; justify-content: space-between; gap: 8px; padding: 5px 0; border-bottom: 1px dashed rgba(120, 160, 220, .08); }
+.ml-hist-row b { color: var(--cyan); font-weight: 600; }
+
+/* Etapas de detección */
+.det-stages { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+.det-stage {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: 1px solid var(--line2);
+  border-radius: 10px;
+  background: var(--panel2);
+  opacity: .5;
+  transition: opacity .25s, border-color .25s, box-shadow .25s;
+}
+.det-stage span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  font-family: var(--font-m);
+  font-size: .6rem;
+  color: var(--muted);
+}
+.det-stage b { font-family: var(--font-h); font-size: .5rem; letter-spacing: .8px; color: var(--muted); text-align: center; text-transform: uppercase; }
+.det-stage.active { opacity: 1; border-color: rgba(0, 212, 255, .6); box-shadow: 0 0 16px rgba(0, 212, 255, .12) inset; }
+.det-stage.active span { color: #031018; background: var(--cyan); border-color: var(--cyan); }
+.det-stage.active b { color: var(--cyan); }
+.det-stage.done { opacity: 1; border-color: rgba(0, 230, 118, .5); }
+.det-stage.done span { color: #031018; background: var(--ok); border-color: var(--ok); }
+.det-stage.done b { color: var(--ok); }
+.det-stage.crit { border-color: rgba(255, 61, 94, .6); }
+.det-stage.crit span { background: var(--red); border-color: var(--red); color: #fff; }
+.sc-sensor { --accent: #94a3b8; }
+
+/* Matriz e historial de pruebas */
+.test-matrix { display: grid; gap: 4px; font-family: var(--font-m); font-size: .58rem; overflow-x: auto; }
+.test-row {
+  display: grid;
+  grid-template-columns: 1.7fr .5fr 1fr .8fr .7fr;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 8px;
+  background: var(--panel2);
+  border-radius: 6px;
+  border-left: 3px solid var(--line);
+  min-width: 430px;
+}
+.test-row.head { background: transparent; color: var(--muted); font-size: .5rem; text-transform: uppercase; letter-spacing: .5px; border-left-color: transparent; }
+.test-row.ok { border-left-color: var(--ok); }
+.test-row.bad { border-left-color: var(--red); }
+.test-row.mid { border-left-color: var(--amber); }
+.test-row .tv { color: #c8d6ea; }
+.test-row .tg { color: var(--ok); }
+.test-row .tr { color: var(--red); }
+.test-row .tm { color: var(--muted); }
+.test-hist-row { display: grid; gap: 2px; padding: 7px 9px; border-radius: 8px; background: var(--panel2); border-left: 3px solid var(--line); font-size: .58rem; }
+.test-hist-row.ok { border-left-color: var(--ok); }
+.test-hist-row.bad { border-left-color: var(--red); }
+.test-hist-row.mid { border-left-color: var(--amber); }
+.test-hist-row .th-top { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); }
+.test-hist-row .th-top b { color: var(--fg); font-weight: 600; }
+
+/* Seguridad y confiabilidad */
+.sec-sensors { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 8px; }
+.sec-sensor {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--line2);
+  border-left: 3px solid var(--ok);
+  border-radius: 8px;
+  background: var(--panel2);
+  font-family: var(--font-m);
+  font-size: .56rem;
+}
+.sec-sensor b { color: var(--cyan); font-weight: 600; }
+.sec-sensor small { color: var(--muted); font-size: .5rem; }
+.sec-sensor.warn { border-left-color: var(--amber); }
+.sec-sensor.off { border-left-color: #64748b; opacity: .75; }
+.guarantees { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.guarantees li { font-size: .74rem; line-height: 1.55; color: #c8d6ea; }
+
+/* Hoja de ruta */
+.roadmap { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.road-card {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  background: var(--panel2);
+  border: 1px solid var(--line2);
+  border-top: 3px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.road-card h4 { margin: 0; font-family: var(--font-h); font-size: .54rem; letter-spacing: 1px; color: #9fd9ff; text-transform: uppercase; }
+.road-card p { margin: 0; font-size: .68rem; line-height: 1.5; color: #a8bbd2; }
+.road-status {
+  justify-self: start;
+  font-family: var(--font-m);
+  font-size: .5rem;
+  letter-spacing: .5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line2);
+  color: var(--muted);
+}
+.road-card.now { border-top-color: var(--ok); }
+.road-card.now .road-status { color: var(--ok); border-color: rgba(0, 230, 118, .45); }
+.road-card.partial { border-top-color: var(--amber); }
+.road-card.partial .road-status { color: var(--amber); border-color: rgba(255, 180, 0, .45); }
+.road-card.future { border-top-color: var(--line); }
+
+@media (max-width: 520px) {
+  .det-stages { grid-template-columns: repeat(2, 1fr); }
+  .test-row { grid-template-columns: 1.4fr .5fr .9fr; min-width: 0; }
+  .test-row .col-hide { display: none; }
+  .layer { padding-left: 44px; }
+}

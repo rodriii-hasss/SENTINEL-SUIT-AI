@@ -50,6 +50,7 @@
   <button class="nav-tab" data-tab="cc" data-i18n="tab.cc">Centro de control</button>
   <button class="nav-tab" data-tab="rover" data-i18n="tab.rover">Rover rescate</button>
   <button class="nav-tab" data-tab="history" data-i18n="tab.history">Historial y pruebas</button>
+  <button class="nav-tab" data-tab="security" data-i18n="tab.security">Seguridad</button>
   <button class="nav-tab" data-tab="about" data-i18n="tab.about">Acerca del proyecto</button>
 </nav>
 
@@ -63,6 +64,7 @@
         <div class="rows">
           <div class="row"><span class="k" data-i18n="row.mission">Misión</span><span class="v" data-mission-name>—</span></div>
           <div class="row"><span class="k" data-i18n="row.astronaut">Astronauta</span><span class="v" id="vAstronaut">—</span></div>
+          <div class="row"><span class="k" data-i18n="row.unit">Unidad del traje</span><span class="v mono" id="vUnit">SENTINEL-01</span></div>
           <div class="row"><span class="k" data-i18n="row.location">Ubicación lunar</span><span class="v" id="vLocation">—</span></div>
           <div class="row"><span class="k" data-i18n="row.mtime">Tiempo de misión</span><span class="v mono" id="missionClock">T+00:00:00</span></div>
           <div class="row"><span class="k" data-i18n="row.comm">Comunicación</span><span class="pill ok" id="commStatus">ENLACE NOMINAL</span></div>
@@ -97,6 +99,32 @@
             <text class="a-name" x="110" y="248" text-anchor="middle">ASTR-02 · EVA-04 · SIM</text>
           </svg>
           <p class="visual-note" data-i18n="visual.note">La ilustración refleja el estado simulado (normal / atención / crítico). No representa a una persona real.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="arch.h">ARQUITECTURA EN CUATRO CAPAS</h2><span class="ph-note" data-i18n="arch.note">estado real del código implementado</span></div>
+      <div class="layers">
+        <div class="layer" id="layerAcq">
+          <span class="layer-num">01</span>
+          <b data-i18n="arch.acq">Adquisición de datos</b>
+          <small id="layerAcqState">—</small>
+        </div>
+        <div class="layer" id="layerEdge">
+          <span class="layer-num">02</span>
+          <b data-i18n="arch.edge">Procesamiento local (edge)</b>
+          <small id="layerEdgeState">—</small>
+        </div>
+        <div class="layer" id="layerAI">
+          <span class="layer-num">03</span>
+          <b data-i18n="arch.ai">Inteligencia artificial</b>
+          <small id="layerAIState">—</small>
+        </div>
+        <div class="layer" id="layerCC">
+          <span class="layer-num">04</span>
+          <b data-i18n="arch.cc">Centro de control</b>
+          <small id="layerCCState">—</small>
         </div>
       </div>
     </div>
@@ -144,6 +172,30 @@
           <div class="ind-value"><span id="vOrient" class="num">8°</span><span class="ind-unit" data-i18n="u.orient">inclinación</span></div>
           <span class="trend" id="tOrient">↔ estable</span>
         </div>
+        <div class="ind" id="indAccel">
+          <div class="ind-top"><span class="ind-label" data-i18n="ind.accel">Aceleración</span><span class="ind-dot"></span></div>
+          <div class="ind-value"><span id="vAccel" class="num">1.0</span><span class="ind-unit" data-i18n="u.g">g sim</span></div>
+          <span class="trend" id="tAccel">↔ estable</span>
+        </div>
+        <div class="ind" id="indQuality">
+          <div class="ind-top"><span class="ind-label" data-i18n="ind.quality">Calidad de señal</span><span class="ind-dot"></span></div>
+          <div class="ind-value"><span id="vQuality" class="num">99%</span><span class="ind-unit" data-i18n="u.quality">% válido</span></div>
+          <span class="trend" id="tQuality">↔ estable</span>
+        </div>
+      </div>
+      <div class="quality-head">
+        <span class="k" data-i18n="quality.h">CALIDAD DE SEÑAL</span>
+        <span class="ph-note" data-i18n="quality.note">validación de sensores simulados</span>
+      </div>
+      <div class="quality-grid" id="qualityGrid">
+        <span class="qb" id="qHr" data-sensor="hr">FC <b>—</b></span>
+        <span class="qb" id="qSpo2" data-sensor="spo2">SpO₂ <b>—</b></span>
+        <span class="qb" id="qPress" data-sensor="press">P <b>—</b></span>
+        <span class="qb" id="qCo2" data-sensor="co2">CO₂ <b>—</b></span>
+        <span class="qb" id="qBatt" data-sensor="batt">BAT <b>—</b></span>
+        <span class="qb" id="qTemp" data-sensor="temp">T <b>—</b></span>
+        <span class="qb" id="qActivity" data-sensor="activity">ACT <b>—</b></span>
+        <span class="qb" id="qOrient" data-sensor="orient">ORI <b>—</b></span>
       </div>
     </div>
 
@@ -170,6 +222,24 @@
             <button id="btnMlAuto" class="ghost" data-i18n="ml.auto.on">APRENDIZAJE EN VIVO: ON</button>
             <button id="btnMlGen" class="primary" data-i18n="ml.gen">GENERAR +50 MUESTRAS SINTÉTICAS</button>
           </div>
+        </div>
+      </div>
+      <div class="ml-analytics">
+        <div class="mini-panel">
+          <div class="mini-head"><span data-i18n="ml.matrix.h">MATRIZ DE CONFUSIÓN (VALIDACIÓN)</span><small data-i18n="ml.matrix.note">filas = real · columnas = predicción</small></div>
+          <div id="mlMatrix" class="matrix"></div>
+        </div>
+        <div class="mini-panel">
+          <div class="mini-head"><span data-i18n="ml.history.h">HISTORIAL DE ENTRENAMIENTO</span></div>
+          <div id="mlHistory" class="mini-list mono"></div>
+        </div>
+        <div class="mini-panel">
+          <div class="mini-head"><span data-i18n="ml.classes.h">DISTRIBUCIÓN DE CLASES</span></div>
+          <div id="mlClasses" class="mini-list mono"></div>
+        </div>
+        <div class="mini-panel">
+          <div class="mini-head"><span data-i18n="ml.errors.h">REGISTRO DE ERRORES</span></div>
+          <div id="mlErrors" class="mini-list mono"></div>
         </div>
       </div>
       <p class="note" data-i18n="ml.note">El modelo (regresión softmax, 7 clases × 8 señales) se entrena con perfiles sintéticos de los escenarios y con tus ejecuciones reales mientras la app está abierta. Solo ayuda a anticipar el tipo de incidente: la alerta la sigue decidiendo el motor de reglas determinista. Sin datos reales ni valor clínico.</p>
@@ -202,6 +272,23 @@
         <button class="sc sc-co2" data-scenario="co2"><b data-i18n="sc.co2.b">Aumento de CO2</b><small data-i18n="sc.co2.s">Filtro saturado (perfil ficticio)</small></button>
         <button class="sc sc-comm" data-scenario="comm"><b data-i18n="sc.comm.b">Pérdida de comunicación</b><small data-i18n="sc.comm.s">Enlace Tierra interrumpido — modo autónomo</small></button>
         <button class="sc sc-battery" data-scenario="battery"><b data-i18n="sc.battery.b">Batería baja</b><small data-i18n="sc.battery.s">Drenaje acelerado de la carga simulada</small></button>
+        <button class="sc sc-sensor" data-scenario="sensorDrop"><b data-i18n="sc.sensorDrop.b">Sensor desconectado</b><small data-i18n="sc.sensorDrop.s">Señal inválida — el motor ignora esa regla</small></button>
+        <button class="sc sc-sensor" data-scenario="badReading"><b data-i18n="sc.badReading.b">Lectura defectuosa</b><small data-i18n="sc.badReading.s">Picos de ruido con baja calidad de señal</small></button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="det.h">ETAPAS DE DETECCIÓN</h2><span class="ph-note" data-i18n="det.note">detección → verificación → escalamiento → registro</span></div>
+      <div class="det-stages" id="detStages">
+        <div class="det-stage" id="detStep1"><span>1</span><b data-i18n="det.s1">Detección</b></div>
+        <div class="det-stage" id="detStep2"><span>2</span><b data-i18n="det.s2">Verificación</b></div>
+        <div class="det-stage" id="detStep3"><span>3</span><b data-i18n="det.s3">Escalamiento</b></div>
+        <div class="det-stage" id="detStep4"><span>4</span><b data-i18n="det.s4">Registro</b></div>
+      </div>
+      <div class="prog"><i id="detProgress" style="width:0%"></i></div>
+      <p class="note" id="detStatus" data-i18n="det.wait">En espera de señal anómala.</p>
+      <div class="actions">
+        <button id="btnAstroRespond" class="ghost" data-i18n="btn.respond">SIMULAR RESPUESTA DEL ASTRONAUTA</button>
       </div>
     </div>
 
@@ -241,6 +328,9 @@
         <div class="panel-head"><h2 data-i18n="comm.h">COMUNICACIONES (SIM)</h2><span class="ph-note" data-i18n="comm.note">modo sin conexión</span></div>
         <div class="rows">
           <div class="row"><span class="k" data-i18n="comm.state">Estado</span><span class="pill ok" id="ccCommMirror">ENLACE NOMINAL</span></div>
+          <div class="row"><span class="k" data-i18n="cc.incidentId">Identificador del incidente</span><span class="mono" id="ccIncidentId">—</span></div>
+          <div class="row"><span class="k" data-i18n="comm.tx">Transmisiones enviadas</span><span class="mono" id="ccTxStats">0 / 0</span></div>
+          <div class="row"><span class="k" data-i18n="comm.recovery">Último tiempo de recuperación</span><span class="mono" id="ccRecovery">—</span></div>
         </div>
         <div class="block">
           <span class="k" data-i18n="comm.queue">Cola de retransmisión</span>
@@ -267,7 +357,10 @@
             <p id="aiText" class="ai-text">—</p>
             <p class="note ai-note" data-i18n="ai.note">La IA solo explica y prioriza el incidente: la alerta la dispara siempre el motor determinista. Datos simulados, sin valor médico.</p>
           </div>
-          <button id="btnReport" class="primary" data-i18n="btn.report">GENERAR INFORME PARA EL CENTRO DE CONTROL</button>
+          <div class="actions">
+            <button id="btnReport" class="primary" data-i18n="btn.report">GENERAR INFORME PARA EL CENTRO DE CONTROL</button>
+            <button id="btnReportCsv" class="ghost" data-i18n="btn.reportCsv">EXPORTAR DATOS EN CSV</button>
+          </div>
           <pre id="reportOutput" class="report" hidden></pre>
         </div>
       </div>
@@ -301,6 +394,24 @@
       </div>
       <p class="note" data-i18n="rover.hint">El rover es un personaje virtual de demostración: calcula la ruta con un algoritmo de búsqueda (BFS en 4 direcciones) sobre la cuadrícula y avanza celda a celda. No representa un robot real ni puede rescatar físicamente a nadie. Si no existe ruta disponible, el sistema lo indica y explica el motivo (los obstáculos aíslan la posición).</p>
     </div>
+
+    <div class="split-2">
+      <div class="panel">
+        <div class="panel-head"><h2 data-i18n="rover.ops.h">OPERACIÓN DEL ROVER</h2><span class="ph-note" data-i18n="rover.ops.note">personaje virtual, no robótica física</span></div>
+        <div class="rows mono">
+          <div class="row"><span class="k" data-i18n="rover.origin">Origen (base)</span><span id="roverOrigin">—</span></div>
+          <div class="row"><span class="k" data-i18n="rover.goal">Destino (astronauta)</span><span id="roverGoal">—</span></div>
+          <div class="row"><span class="k" data-i18n="rover.total">Distancia total</span><span id="roverTotal">—</span></div>
+          <div class="row"><span class="k" data-i18n="rover.done">Recorrida</span><span id="roverDone">—</span></div>
+          <div class="row"><span class="k" data-i18n="rover.remaining">Restante</span><span id="roverRemaining">—</span></div>
+          <div class="row"><span class="k" data-i18n="rover.elapsed">Tiempo transcurrido</span><span id="roverElapsed">—</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2 data-i18n="rover.events.h">EVENTOS DE LA OPERACIÓN</h2><span class="ph-note mono" id="roverEventCount">0</span></div>
+        <div id="roverEvents" class="mini-list"></div>
+      </div>
+    </div>
   </section>
 
   <!-- ================= HISTORIAL Y PRUEBAS ================= -->
@@ -316,6 +427,28 @@
         <div class="row"><span class="k" data-i18n="mtr.avg">Tiempo medio de respuesta del software</span><span id="mtrAvg">—</span></div>
         <div class="row"><span class="k" data-i18n="mtr.comm">Estado de comunicaciones</span><span id="mtrComm">ENLACE NOMINAL (SIMULADO)</span></div>
         <div class="row"><span class="k" data-i18n="mtr.db">Eventos guardados en base de datos SQLite</span><span id="mtrDb">—</span></div>
+        <div class="row"><span class="k" data-i18n="mtr.detect">Tiempo medio de detección</span><span id="mtrDetect">—</span></div>
+        <div class="row"><span class="k" data-i18n="mtr.sens">Sensibilidad (escenarios con alerta)</span><span id="mtrSens">—</span></div>
+        <div class="row"><span class="k" data-i18n="mtr.spec">Especificidad (escenarios normales)</span><span id="mtrSpec">—</span></div>
+        <div class="row"><span class="k" data-i18n="mtr.tx">Eventos transmitidos</span><span id="mtrTx">—</span></div>
+        <div class="row"><span class="k" data-i18n="mtr.pending">Pendientes de sincronización</span><span id="mtrPending">—</span></div>
+        <div class="row"><span class="k" data-i18n="mtr.recovery">Tiempo medio de recuperación de comunicación</span><span id="mtrRecovery">—</span></div>
+      </div>
+      <p class="note" data-i18n="test.note">Solo resultados medidos en ejecuciones reales de este navegador. No se inventan porcentajes.</p>
+      <div class="actions">
+        <button id="btnTestSuite" class="primary" data-i18n="btn.testSuite">EJECUTAR BATERÍA DE PRUEBAS</button>
+        <button id="btnExportCsv" class="ghost" data-i18n="btn.exportCsv">EXPORTAR RESULTADOS (.csv)</button>
+      </div>
+    </div>
+
+    <div class="split-2">
+      <div class="panel">
+        <div class="panel-head"><h2 data-i18n="test.matrix.h">MATRIZ DE PRUEBAS POR ESCENARIO</h2><span class="ph-note" data-i18n="test.note">resultados reales</span></div>
+        <div id="testMatrix" class="test-matrix"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2 data-i18n="test.history.h">HISTORIAL DE PRUEBAS</h2><span class="ph-note mono" id="testRunCount">0</span></div>
+        <div id="testHistory" class="mini-list"></div>
       </div>
     </div>
 
@@ -333,6 +466,47 @@
         <button id="btnExport" class="primary" data-i18n="btn.export">EXPORTAR INFORME (.txt)</button>
         <button id="btnReset" class="danger" data-i18n="btn.resetSim">REINICIAR SIMULACIÓN</button>
       </div>
+    </div>
+  </section>
+
+  <!-- ================= SEGURIDAD Y CONFIABILIDAD ================= -->
+  <section id="tab-security" class="tab" hidden>
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="sec.h">SEGURIDAD Y CONFIABILIDAD</h2><span class="ph-note" data-i18n="sec.note">garantías y comprobación de integridad</span></div>
+      <div class="split-2">
+        <div>
+          <div class="mini-head"><span data-i18n="sec.sensors.h">INTEGRIDAD DE SENSORES</span><small data-i18n="sec.sensors.note">estado de validez de cada señal simulada</small></div>
+          <div class="sec-sensors" id="secSensorGrid"></div>
+          <p class="note" data-i18n="sec.sensors.hint">Un sensor con calidad baja se muestra en gris o ámbar. Sus reglas se ignoran para evitar falsas alarmas y se registra el aviso. Esto imita la validación de sensores de un sistema real, sin sensores físicos.</p>
+        </div>
+        <div>
+          <div class="mini-head"><span data-i18n="sec.sys.h">DISPONIBILIDAD DEL SISTEMA</span><small data-i18n="sec.note">estado en vivo</small></div>
+          <div class="rows">
+            <div class="row"><span class="k" data-i18n="sec.db">Base de datos SQLite</span><span class="pill" id="secDb">—</span></div>
+            <div class="row"><span class="k" data-i18n="sec.ai">IA de apoyo</span><span class="pill" id="secAi">—</span></div>
+            <div class="row"><span class="k" data-i18n="sec.offline">Funcionamiento sin conexión</span><span class="pill ok" id="secOffline">—</span></div>
+            <div class="row"><span class="k" data-i18n="sec.det">Motor determinista</span><span class="pill ok" id="secDet">—</span></div>
+            <div class="row"><span class="k" data-i18n="sec.storage">Almacenamiento local</span><span class="pill" id="secStorage">—</span></div>
+            <div class="row"><span class="k" data-i18n="sec.lastSave">Último guardado</span><span class="mono" id="secLastSave">—</span></div>
+          </div>
+          <div class="actions">
+            <button id="btnIntegrityCheck" class="primary" data-i18n="btn.integrity">EJECUTAR COMPROBACIÓN DE INTEGRIDAD</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2 data-i18n="sec.guarantees.h">GARANTÍAS DE DISEÑO</h2><span class="ph-note" data-i18n="sec.note">límites explícitos del prototipo</span></div>
+      <ul class="guarantees">
+        <li data-i18n="sec.g1">La IA no controla el soporte vital ni válvulas, oxígeno o presión.</li>
+        <li data-i18n="sec.g2">El sistema no realiza diagnósticos médicos; solo declara posible emergencia.</li>
+        <li data-i18n="sec.g3">Los sensores defectuosos generan avisos y sus reglas se ignoran para evitar falsas alarmas.</li>
+        <li data-i18n="sec.g4">Las decisiones críticas no dependen de Internet: el motor determinista es local.</li>
+        <li data-i18n="sec.g5">El registro local conserva los eventos aunque se pierda la comunicación.</li>
+        <li data-i18n="sec.g6">Los datos de prueba se identifican siempre como simulados.</li>
+        <li data-i18n="sec.g7">El motor determinista permanece como respaldo de la IA y del ML.</li>
+      </ul>
     </div>
   </section>
 
@@ -391,6 +565,31 @@
 
         <h3 data-i18n="about.app.h">Posibles aplicaciones futuras</h3>
         <p data-i18n="about.app.p">Monitoreo de expediciones polares o mineras con módulos equivalentes, fabricantes de EVA, entrenamiento de centros de control y ejercicios de contingencia, y como plataforma para estudiar el diseño de protocolos de rescate en exploración planetaria.</p>
+
+        <h3 data-i18n="about.road.h">Hoja de ruta y madurez tecnológica</h3>
+        <p data-i18n="about.road.note">Evolución por fases. No se declara ningún nivel TRL alcanzado sin evidencia verificable.</p>
+        <div class="roadmap">
+          <div class="road-card now">
+            <span class="road-status" data-i18n="about.road.status.now">IMPLEMENTADO</span>
+            <h4 data-i18n="about.road.a.h">Fase A — Prototipo de laboratorio</h4>
+            <p data-i18n="about.road.a.p">Aplicación web, telemetría simulada, motor de detección determinista, panel de supervisión y registro de eventos. Es el estado actual del prototipo.</p>
+          </div>
+          <div class="road-card future">
+            <span class="road-status" data-i18n="about.road.status.future">FUTURO</span>
+            <h4 data-i18n="about.road.b.h">Fase B — Integración electrónica</h4>
+            <p data-i18n="about.road.b.p">Evaluar ESP32, IMU y sensores físicos compatibles; integrar adquisición real de datos y comparar sensores reales con los simulados. No implementado.</p>
+          </div>
+          <div class="road-card partial">
+            <span class="road-status" data-i18n="about.road.status.partial">PARCIAL</span>
+            <h4 data-i18n="about.road.c.h">Fase C — Inteligencia artificial</h4>
+            <p data-i18n="about.road.c.p">Recopilar datos etiquetados, entrenar y evaluar modelos, calibrar umbrales y documentar falsas alarmas. Hoy solo existe el clasificador sintético del navegador.</p>
+          </div>
+          <div class="road-card future">
+            <span class="road-status" data-i18n="about.road.status.future">FUTURO</span>
+            <h4 data-i18n="about.road.d.h">Fase D — Validación</h4>
+            <p data-i18n="about.road.d.p">Pruebas de laboratorio, robustez, usabilidad, revisión técnica y documentación de limitaciones. Pendiente.</p>
+          </div>
+        </div>
 
         <h3 data-i18n="about.n.h">Aviso</h3>
         <p data-i18n-html="about.n.p">Proyecto educativo para la clase y preparación del NASA Space Apps Challenge 2026 como ejercicio de aprendizaje. <b>No está afiliado a NASA ni respaldado, probado o aprobado por la agencia.</b> No existen conexiones reales con ningún centro de control.</p>
